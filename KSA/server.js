@@ -18,11 +18,22 @@ app.options('*', cors());
 // Middleware
 app.use(express.json());
 
-// Connect to MongoDB
-mongoose.connect("mongodb://localhost:27017/gsa")
+require('dotenv').config();  // Load environment variables
+// const mongoose = require('mongoose');
+
+const MONGO_URI = `mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/${process.env.MONGO_DB}?authSource=admin`;
+
+mongoose.connect(MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.log('MongoDB connection error:', err));
 
+// // Connect to MongoDB
+// mongoose.connect("mongodb://localhost:27017/gsa")
+//     .then(() => console.log('MongoDB connected'))
+//     .catch(err => console.log('MongoDB connection error:', err));
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
@@ -40,7 +51,6 @@ app.use('/api/turf-admin', require('./routes/BoxCricketRoutes'));
 app.use('/api/admin/home', require('./routes/HomeRoutes'));
 app.use('/api/inventory', require('./routes/InventoryRoutes'));
 app.use('/api/superuser', require('./routes/SuperUserRoutes'));
-// setInterval(updateTrainees1,60000)
 app.use('/uploads', express.static('uploads'));
 
 // Start server
