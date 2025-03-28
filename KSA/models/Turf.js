@@ -46,7 +46,7 @@ const turfSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     }, // Booking active/inactive status
-    user_id: {
+    userid: {
         type: Schema.Types.ObjectId,
         ref: 'User',
         required: true // Made required for consistency

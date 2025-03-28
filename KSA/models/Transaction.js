@@ -1,14 +1,12 @@
 // models/Transaction.js
 const mongoose = require('mongoose');
-const {Schema} = require("mongoose");
+const { Schema } = require("mongoose");
 
 const transactionSchema = new mongoose.Schema({
     amt_in_out: { type: String, required: true, enum: ['IN', 'OUT'] },
     amount: { type: Number, required: true },
     description: { type: String, required: true },
     identification: { type: String },
-    // balance_before_transaction: { type: Number},
-    // balance_after_transaction: { type: Number },
     method: {
         type: String,
         required: true,
@@ -26,8 +24,20 @@ const transactionSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
+    },
+    isDeleted: {
+        type: Boolean,
+        default: false,
+        index: true // Adding index for better query performance
+    },
+    deletedAt: {
+        type: Date,
+        default: null
     }
 });
+
+// Add index for better query performance
+transactionSchema.index({ institute: 1, isDeleted: 1 });
 
 const Transaction = mongoose.models.Transaction || mongoose.model('Transaction', transactionSchema);
 module.exports = Transaction;

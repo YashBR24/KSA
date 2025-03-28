@@ -5,7 +5,7 @@ const detailsacademy = new mongoose.Schema({
     name: {type: String, required: true},
     amount: {type: Number, required: true},
     plan_limit: {type: Number, required: true},
-    sport: {type: String, enum: ['Cricket', 'Football'], required: true},
+    sport: {type: String, enum: ['Cricket', 'Football'], required: false},
     active: {type: Boolean, default: true},
     createdOn: {type: Date, default: Date.now}
 });

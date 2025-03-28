@@ -30,7 +30,7 @@ mongoose.connect(MONGO_URI, {
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.log('MongoDB connection error:', err));
 
-// // Connect to MongoDB
+// Connect to MongoDB
 // mongoose.connect("mongodb://localhost:27017/gsa")
 //     .then(() => console.log('MongoDB connected'))
 //     .catch(err => console.log('MongoDB connection error:', err));
