@@ -1050,7 +1050,7 @@ const TurfBooking = () => {
                                     <span className="ml-1 text-gray-500">/session</span>
                                 </div>
 
-                                <div className="space-y-3 pt-4 border-t border-gray-100">
+                                <div className="space-y-3 pt-4 border-t border-gray-100 pb-4">
                                     <div className="flex items-center text-gray-600">
                                         <svg className="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1075,6 +1075,7 @@ const TurfBooking = () => {
                                         <span className="ml-2">{plan.from} - {plan.to}</span>
                                     </div>
 
+                                    <div className='flex items-center justify-center'>
                                     <button
                                         onClick={() => handleEditPlan(plan._id)}
                                         className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -1082,6 +1083,7 @@ const TurfBooking = () => {
                                         <Pencil size={20} />
                                         Edit Plan
                                     </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
