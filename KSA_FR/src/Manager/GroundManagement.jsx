@@ -471,65 +471,6 @@ useEffect(() => {
                 Create Booking
             </button>
 
-            {/* Calendar View Backup*/}
-            {/*<div className="mb-8 bg-white rounded-lg shadow-lg p-6 border border-gray-100">*/}
-            {/*    <div className="flex items-center justify-between mb-6">*/}
-            {/*        <h4 className="text-lg font-semibold text-gray-800">Calendar View</h4>*/}
-            {/*        <div className="flex items-center space-x-6">*/}
-            {/*            <div className="flex items-center">*/}
-            {/*                <div className="w-4 h-4 bg-blue-600 rounded-md mr-2 shadow-sm"></div>*/}
-            {/*                <span className="text-sm text-gray-600">Ground A</span>*/}
-            {/*            </div>*/}
-            {/*            <div className="flex items-center">*/}
-            {/*                <div className="w-4 h-4 bg-emerald-600 rounded-md mr-2 shadow-sm"></div>*/}
-            {/*                <span className="text-sm text-gray-600">Ground B</span>*/}
-            {/*            </div>*/}
-            {/*            <div className="flex items-center">*/}
-            {/*                <div className="w-4 h-4 bg-blue-600 rounded-md mr-2 shadow-sm" style={{*/}
-            {/*                    backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.3) 5px, rgba(255,255,255,0.3) 10px)'*/}
-            {/*                }}></div>*/}
-            {/*                <span className="text-sm text-gray-600">Half Day Ground A</span>*/}
-            {/*            </div>*/}
-            {/*            <div className="flex items-center">*/}
-            {/*                <div className="w-4 h-4 bg-emerald-600 rounded-md mr-2 shadow-sm" style={{*/}
-            {/*                    backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.3) 5px, rgba(255,255,255,0.3) 10px)'*/}
-            {/*                }}></div>*/}
-            {/*                <span className="text-sm text-gray-600">Half Day Ground B</span>*/}
-            {/*            </div>*/}
-            {/*        </div>*/}
-            {/*    </div>*/}
-            {/*    <div className="h-[600px]">*/}
-            {/*        <Calendar*/}
-            {/*            localizer={localizer}*/}
-            {/*            events={calendarEvents}*/}
-            {/*            startAccessor="start"*/}
-            {/*            endAccessor="end"*/}
-            {/*            views={['month', 'week', 'day']}*/}
-            {/*            defaultView="month"*/}
-            {/*            eventPropGetter={eventStyleGetter}*/}
-            {/*            components={{*/}
-            {/*                toolbar: CustomToolbar,*/}
-            {/*                event: EventComponent*/}
-            {/*            }}*/}
-            {/*            popup*/}
-            {/*            selectable*/}
-            {/*            onSelectSlot={(slotInfo) => {*/}
-            {/*                setShowModal(true);*/}
-            {/*                setEditMode(false);*/}
-            {/*                resetBookingForm();*/}
-            {/*                setBookingForm(prev => ({*/}
-            {/*                    ...prev,*/}
-            {/*                    date: moment(slotInfo.start).format('YYYY-MM-DD')*/}
-            {/*                }));*/}
-            {/*            }}*/}
-            {/*            onSelectEvent={(event) => {*/}
-            {/*                const booking = event.resource;*/}
-            {/*                handleEditBooking(booking);*/}
-            {/*            }}*/}
-            {/*        />*/}
-            {/*    </div>*/}
-            {/*</div>*/}
-
 
             <div className="min-h-screen bg-transparent p-4">
                 <div className="mb-8 bg-white rounded-lg shadow-lg p-4 sm:p-6 border border-gray-100">
@@ -644,58 +585,6 @@ useEffect(() => {
                     className="px-4 py-2 border border-gray-300 rounded-md"
                 />
             </div>
-
-
-            {/*BACKUP*/}
-            {/*<div className='h-[70vh] overflow-y-auto'>*/}
-            {/*    <h4 className="text-md font-semibold text-gray-700 mb-2">Bookings</h4>*/}
-            {/*    <table className="w-full border">*/}
-            {/*        <thead>*/}
-            {/*        <tr>*/}
-            {/*            <th className="border px-4 py-2">Name</th>*/}
-            {/*            <th className="border px-4 py-2">Mobile</th>*/}
-            {/*            <th className="border px-4 py-2">Ground</th>*/}
-            {/*            <th className="border px-4 py-2">Start Date</th>*/}
-            {/*            <th className="border px-4 py-2">End Date</th>*/}
-            {/*            <th className="border px-4 py-2">Due Amount</th>*/}
-            {/*            /!*<th className="border px-4 py-2">Status</th>*!/*/}
-            {/*            <th className="border px-4 py-2">Actions</th>*/}
-            {/*        </tr>*/}
-            {/*        </thead>*/}
-            {/*        <tbody>*/}
-            {/*        {filteredBookings.map((booking) => (*/}
-            {/*            <tr key={booking._id}>*/}
-            {/*                <td className="border px-4 py-2">{booking.name}</td>*/}
-            {/*                <td className="border px-4 py-2">{booking.mobile_no}</td>*/}
-            {/*                <td className="border px-4 py-2">{booking.ground}</td>*/}
-            {/*                <td className="border px-4 py-2">{formatDateTime(booking.start_date)}</td>*/}
-            {/*                <td className="border px-4 py-2">{formatDateTime(booking.end_date)}</td>*/}
-            {/*                <td className="border px-4 py-2">Rs.{booking.leftover}</td>*/}
-            {/*                /!*<td className="border px-4 py-2">{booking.status ? 'Active' : 'Inactive'}</td>*!/*/}
-            {/*                <td className="border px-4 py-2 flex gap-2">*/}
-            {/*                    <button*/}
-            {/*                        onClick={() => handleMarkasPaid(booking._id, booking.leftover)}*/}
-            {/*                        className={`bg-blue-500 text-white px-2 py-1 no-underline rounded hover:bg-blue-600 ${*/}
-            {/*                            booking.leftover === 0 ? 'opacity-50 cursor-not-allowed' : ''*/}
-            {/*                        }`}*/}
-            {/*                        disabled={booking.leftover === 0}*/}
-            {/*                    >*/}
-            {/*                        Mark as Paid*/}
-            {/*                    </button>*/}
-
-            {/*                    <button*/}
-            {/*                        onClick={() => handleEditBooking(booking)}*/}
-            {/*                        className="bg-yellow-500 text-white px-2 py-1 no-underline rounded hover:bg-yellow-600"*/}
-            {/*                    >*/}
-            {/*                        Edit*/}
-            {/*                    </button>*/}
-            {/*                </td>*/}
-
-            {/*            </tr>*/}
-            {/*        ))}*/}
-            {/*        </tbody>*/}
-            {/*    </table>*/}
-            {/*</div>*/}
 
 
             <div className="h-screen bg-gradient-to-br p-1 sm:p-2">

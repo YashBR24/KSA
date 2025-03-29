@@ -71,56 +71,6 @@ const AttendanceManagement = () => {
         }
     };
 
-    // const fetchMonthAttendance = async (startDate, endDate) => {
-    //     const dates = [];
-    //     let currentDate = new Date(startDate);
-    //     const end = new Date(endDate);
-
-    //     // Generate array of dates for the month
-    //     while (currentDate <= end) {
-    //         dates.push(new Date(currentDate));
-    //         currentDate.setDate(currentDate.getDate() + 1);
-    //     }
-
-    //     // Fetch attendance for each date
-    //     const attendancePromises = dates.map(async (date) => {
-    //         const formattedDate = date.toISOString().split('T')[0];
-    //         const response = await fetch(`${ip}/api/manager/trainee-attendance`, {
-    //             method: "POST",
-    //             headers: {
-    //                 "Content-Type": "application/json",
-    //             },
-    //             body: JSON.stringify({
-    //                 date: formattedDate,
-    //                 userid: localStorage.getItem("userid")
-    //             }),
-    //         });
-    //         const data = await response.json();
-    //         return {
-    //             date: formattedDate,
-    //             presentStudents: data.presentStudents || [],
-    //             absentStudents: data.absentStudents || []
-    //         };
-    //     });
-
-    //     const monthData = await Promise.all(attendancePromises);
-    //     setMonthAttendance(monthData);
-
-    //     // Update calendar events for the selected student
-    //     if (selectedStudent) {
-    //         const events = monthData.map(day => {
-    //             const isPresent = day.presentStudents.some(s => s.rollno === selectedStudent.rollno);
-    //             return {
-    //                 title: isPresent ? 'Present' : 'Absent',
-    //                 start: new Date(day.date),
-    //                 end: new Date(day.date),
-    //                 allDay: true,
-    //                 status: isPresent ? 'present' : 'absent'
-    //             };
-    //         });
-    //         setCalendarEvents(events);
-    //     }
-    // };
 
     const fetchMonthAttendance = async (startDate, endDate) => {
         const dates = [];

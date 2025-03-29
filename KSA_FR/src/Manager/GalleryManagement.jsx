@@ -216,56 +216,7 @@ const GalleryManagement = () => {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Photo
                                 </label>
-                                {/* <div
-                                    className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors">
-                                    <div className="space-y-2 text-center">
-                                        {newImage.photo ? (
-                                            <div className="relative mx-auto w-32 h-32">
-                                                <img
-                                                    src={URL.createObjectURL(newImage.photo)}
-                                                    alt="Preview"
-                                                    className="w-full h-full object-cover rounded-lg"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setNewImage(prev => ({...prev, photo: null}))}
-                                                    className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
-                                                >
-                                                    <X size={16}/>
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <Upload className="mx-auto h-12 w-12 text-gray-400"/>
-                                                <div className="flex text-sm text-gray-600">
-                                                    <label htmlFor="photo-upload"
-                                                           className="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                                        <span>Upload a photo</span>
-                                                        <input
-                                                            id="photo-upload"
-                                                            name="photo-upload"
-                                                            type="file"
-                                                            className="sr-only"
-                                                            accept="image/*"
-                                                            onChange={(e) => {
-                                                                const photo = e.target.files?.[0];
-                                                                if (photo) {
-                                                                    setNewImage(prev => ({
-                                                                        ...prev,
-                                                                        photo: photo
-                                                                    }));
-                                                                }
-                                                            }}
-                                                            required
-                                                        />
-                                                    </label>
-                                                    <p className="pl-1">or drag and drop</p>
-                                                </div>
-                                                <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
-                                            </>
-                                        )}
-                                    </div>
-                                </div> */}
+                               
                                 <div
                                     className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors cursor-pointer"
                                     onClick={() => document.getElementById("photo-upload")?.click()} // Triggers file input
