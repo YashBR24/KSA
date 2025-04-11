@@ -17,6 +17,12 @@ const {
     changeInstituteStatus,
     editInstitute,
     editSport, deleteInstitute,
+    addBatch,
+    getAllBatches,
+    getActiveBatches,
+    editBatch,
+    changeBatchStatus,
+    deleteBatch,
 } = require('../controllers/AcademyController');
 const mongoose = require('mongoose');
 const router = express.Router();
@@ -28,6 +34,7 @@ const DetailsAcademy = require('../models/DetailsAcademy');
 const Institute = require('../models/Institute');
 const Sport = require('../models/Sport');
 const User = require('../models/user');
+const Batch = require('../models/Batch');
 const moment = require('moment');
 
 // Existing routes with controllers
@@ -51,6 +58,14 @@ router.post('/active-institutes', getActiveInstitutes);
 router.put('/update-institute/:id', editInstitute);
 router.patch('/update-institute-status/:id/toggle', changeInstituteStatus);
 router.post('/institute/:id', deleteInstitute);
+
+// Batch routes
+router.post('/add-batch', addBatch);
+router.post('/all-batches', getAllBatches);
+router.post('/active-batches', getActiveBatches);
+router.put('/update-batch/:id', editBatch);
+router.patch('/update-batch-status/:id/toggle', changeBatchStatus);
+router.delete('/batch/:id', deleteBatch);
 
 // Add new trainee
 router.post('/trainee', async (req, res) => {
@@ -154,7 +169,7 @@ router.post('/id-card-generated', async (req, res) => {
     }
 });
 
-const bal_id = "677ba181a9f86714ba5b860b";
+// routes/AcademyRoute.js
 router.post('/renewal', async (req, res) => {
     try {
         const authHeader = req.headers.authorization;
@@ -178,11 +193,12 @@ router.post('/renewal', async (req, res) => {
             payment_method,
             institute_id,
             sport_id,
+            batch_id, // Added batch_id
             start_date,
             expiry_date
         } = req.body;
 
-        if (!trainee_id || !plan_id || !amount || !payment_method || !institute_id || !sport_id || !roll_no) {
+        if (!trainee_id || !plan_id || !amount || !payment_method || !institute_id || !sport_id || !batch_id || !roll_no) {
             log(`MISSING_REQUIRED_FIELDS_RENEWAL_${trainee_id || 'UNKNOWN'}`);
             return res.status(400).send('Missing required fields');
         }
@@ -190,7 +206,8 @@ router.post('/renewal', async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(trainee_id) ||
             !mongoose.Types.ObjectId.isValid(plan_id) ||
             !mongoose.Types.ObjectId.isValid(institute_id) ||
-            !mongoose.Types.ObjectId.isValid(sport_id)) {
+            !mongoose.Types.ObjectId.isValid(sport_id) ||
+            !mongoose.Types.ObjectId.isValid(batch_id)) {
             log(`INVALID_ID_FORMAT_RENEWAL_${trainee_id}`);
             return res.status(400).send('Invalid ID format');
         }
@@ -224,6 +241,12 @@ router.post('/renewal', async (req, res) => {
             return res.status(404).send('Sport not found');
         }
 
+        const batch = await Batch.findById(batch_id);
+        if (!batch) {
+            log(`BATCH_NOT_FOUND_RENEWAL_${trainee_id}`);
+            return res.status(404).send('Batch not found');
+        }
+
         const user = await User.findById(userId);
         if (!user) {
             log(`USER_NOT_FOUND_${userId}`);
@@ -247,6 +270,7 @@ router.post('/renewal', async (req, res) => {
         trainee.plan_id = plan_id;
         trainee.institute_id = institute_id;
         trainee.sport_id = sport_id;
+        trainee.batch_id = batch_id; // Added batch_id
         trainee.from = renewalStartDate.toDate();
         trainee.to = renewalExpiryDate.toDate();
         trainee.amount = Number(amount);
@@ -254,7 +278,6 @@ router.post('/renewal', async (req, res) => {
         trainee.active = true;
         await trainee.save();
 
-        // ✅ Corrected line: make sure to use `institute` instead of `institute_id`
         let balance = await Balance.findOne({ institute: institute_id });
         if (!balance) {
             balance = new Balance({

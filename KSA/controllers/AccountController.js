@@ -5,6 +5,7 @@ const Institute = require('../models/Institute');
 const mongoose = require('mongoose');
 const { log } = require("../Logs/logs");
 
+
 // Helper function to calculate balance from transactions (excluding deleted)
 const calculateBalanceFromTransactions = async (instituteId) => {
     const transactions = await Transaction.find({
@@ -89,6 +90,7 @@ const fetchInstituteTransactions = async (req, res) => {
 
         log(`INSTITUTE_TRANSACTIONS_FETCHED_${instituteId}_COUNT_${transactions.length}`);
         res.status(200).json(transactions);
+        // console.log(transactions);
     } catch (error) {
         log(`ERROR_FETCHING_INSTITUTE_TRANSACTIONS_${error.message}`);
         console.error("Error fetching institute transactions:", error.message);

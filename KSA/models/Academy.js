@@ -24,6 +24,7 @@ const academySchema = new mongoose.Schema({
     plan_id: { type: Schema.Types.ObjectId, ref: 'DetailsAcademy', required: false },
     sport_id: { type: Schema.Types.ObjectId, ref: 'Sport', required: true }, // New field
     institute_id: { type: Schema.Types.ObjectId, ref: 'Institute', required: true }, // New field
+    batch_id: { type: Schema.Types.ObjectId, ref: 'Batch', required: true }, // New field
     active: { type: Boolean, default: true },
     user_id: { type: Schema.Types.ObjectId, ref: 'User' },
     id_card_generated: { type: Boolean, default: false },

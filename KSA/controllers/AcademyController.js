@@ -131,6 +131,7 @@ const Students = require('../models/Academy');
 const Sport = require('../models/Sport');
 const Transaction = require('../models/Transaction');
 const Institute = require('../models/Institute');
+const Batch = require('../models/Batch');
 const { log } = require("../Logs/logs");
 
 const getActiveDetailsAcademy = async (req, res) => {
@@ -421,6 +422,106 @@ const editSport = async (req, res) => {
     }
 };
 
+// Add a new batch
+const addBatch = async (req, res) => {
+    try {
+        log(`ADDING_NEW_BATCH`);
+        const { name, start_time, end_time } = req.body;
+        const batch = new Batch({ name, start_time, end_time });
+        await batch.save();
+        res.status(201).json(batch);
+    } catch (error) {
+        log(`ERROR_ADDING_NEW_BATCH`);
+        res.status(400).json({ error: error.message });
+    }
+};
+
+// Get all batches
+const getAllBatches = async (req, res) => {
+    try {
+        log(`FETCHING_ALL_BATCHES`);
+        const { userId } = req.body;
+        const result1 = await User.findById(userId);
+        if (!result1) {
+            return res.status(200).json("Not Found");
+        }
+        const batches = await Batch.find();
+        res.status(200).json(batches);
+    } catch (error) {
+        log(`ERROR_FETCHING_ALL_BATCHES`);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// Get active batches
+const getActiveBatches = async (req, res) => {
+    try {
+        log(`FETCHING_ACTIVE_BATCHES`);
+        const batches = await Batch.find({ active: true });
+        res.status(200).json(batches);
+    } catch (error) {
+        log(`ERROR_FETCHING_ACTIVE_BATCHES`);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// Edit batch
+const editBatch = async (req, res) => {
+    try {
+        log(`EDITING_BATCH_${req.params.id}`);
+        const { id } = req.params;
+        const { name, start_time, end_time } = req.body;
+
+        const updatedBatch = await Batch.findByIdAndUpdate(
+            id,
+            { name, start_time, end_time },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedBatch) {
+            return res.status(404).json({ error: 'Batch not found' });
+        }
+
+        res.status(200).json(updatedBatch);
+    } catch (error) {
+        log(`ERROR_EDITING_BATCH_${req.params.id}`);
+        res.status(400).json({ error: error.message });
+    }
+};
+
+// Toggle batch status
+const changeBatchStatus = async (req, res) => {
+    try {
+        log(`CHANGING_BATCH_STATUS_${req.params.id}`);
+        const batch = await Batch.findById(req.params.id);
+        if (!batch) return res.status(404).json({ error: 'Batch not found' });
+        batch.active = !batch.active;
+        await batch.save();
+        res.json(batch);
+    } catch (error) {
+        log(`ERROR_CHANGING_BATCH_STATUS_${req.params.id}`);
+        res.status(400).json({ error: error.message });
+    }
+};
+
+// Delete batch
+const deleteBatch = async (req, res) => {
+    try {
+        log(`DELETING_BATCH_${req.params.id}`);
+        const batch = await Batch.findById(req.params.id);
+
+        if (!batch) {
+            return res.status(404).json({ error: 'Batch not found' });
+        }
+
+        await Batch.findByIdAndDelete(req.params.id);
+        res.status(200).json({ message: 'Batch deleted successfully' });
+    } catch (error) {
+        log(`ERROR_DELETING_BATCH_${req.params.id}`);
+        res.status(400).json({ error: error.message });
+    }
+};
+
 module.exports = {
     ChangePlanStatus,
     UpdatePlan,
@@ -439,5 +540,12 @@ module.exports = {
     changeInstituteStatus,
     editInstitute,
     editSport,
-    deleteInstitute
+    deleteInstitute,
+    addBatch,
+    getAllBatches,
+    getActiveBatches,
+    editBatch,
+    changeBatchStatus,
+    deleteBatch,
+
 };

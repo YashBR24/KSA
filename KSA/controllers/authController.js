@@ -3,7 +3,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { generateOTP, isOtpExpired } = require('../utils/otpGenerator');
 const { verifyRecaptcha } = require('../utils/recaptcha');
-const {log} = require("../Logs/logs");
 
 exports.signups = async (req, res) => {
 
@@ -244,7 +243,7 @@ exports.verifyOtpLogins = async (req, res) => {
 exports.login = async (req, res) => {
     const { email, password, recaptchaToken } = req.body;
 //console.log(1)
-    log(`LOGIN_${email}`);
+//     log(`LOGIN_${email}`);
     // Verify reCAPTCHA
     const recaptchaValid = await verifyRecaptcha(recaptchaToken);
 

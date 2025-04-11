@@ -9,6 +9,7 @@ const staffSchema = new mongoose.Schema({
     phone: { type: String, required: false },
     dob: { type: Date, required: false },
     photo: { type: String, required: false },
+    sport_id: { type: Schema.Types.ObjectId, ref: 'Sport', required: true },
     active: { type: Boolean, default: true },
     user_id:{ type: Schema.Types.ObjectId, ref: 'User' },
     id_card_generated: { type: Boolean, default: false },

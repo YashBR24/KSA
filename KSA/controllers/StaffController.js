@@ -4,6 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const User = require("../models/user");
 const Staff = require("../models/Staff");
+const Sport = require('../models/Sport');
 const { log } = require("../Logs/logs")
 
 // Multer Storage Config
@@ -57,17 +58,28 @@ const addNewStaff = async (req, res) => {
         upload.fields([{ name: "photo", maxCount: 1 }])(req, res, async (err) => {
             if (err) return res.status(400).json({ message: err.message });
 
-            const { userid, role, name, address, phone, dob } = req.body;
+            const { userid, role, name, address, phone, dob, sport_id } = req.body;
             log(`ADDING_NEW_STAFF_${userid}_${name}`);
+
+            // Validate manager
             const manager = await User.findOne({ role: "Manager", _id: new mongoose.Types.ObjectId(userid) });
             if (!manager) {
                 return res.status(404).json({ message: "Manager not found" });
             }
 
+            // Validate sport
+            const sportDetails = await Sport.findById(sport_id);
+            if (!sportDetails) {
+                log(`SPORT_NOT_FOUND_${sport_id}`);
+                return res.status(404).send("Sport not found");
+            }
+
+            // Generate roll_no
             const rollno = await Staff.countDocuments({ role });
             const prefix = role === "Staff" ? "STA" : role === "Coach" ? "COA" : "UNK";
             const roll_no = `${prefix}${String(rollno + 25001)}`;
 
+            // Handle photo upload
             let photoFilename = "";
             if (req.files && req.files.photo) {
                 photoFilename = `${roll_no}_photo${path.extname(req.files.photo[0].originalname)}`;
@@ -82,6 +94,8 @@ const addNewStaff = async (req, res) => {
                 photo: photoFilename,
                 phone,
                 dob,
+                sport_id,
+                user_id: userid
             });
 
             await newStaff.save();
@@ -100,44 +114,65 @@ const editStaff = async (req, res) => {
         upload.fields([{ name: "photo", maxCount: 1 }])(req, res, async (err) => {
             if (err) return res.status(400).json({ message: err.message });
 
-            const { userid,rollno, role, name, address, phone, dob } = req.body;
+            const { userid, rollno, role, name, address, phone, dob, sport_id } = req.body;
             log(`EDITING_STAFF_${rollno}_${userid}`);
-            //console.log(rollno,role,name,address,phone,dob)
+
+            // Validate manager
             const manager = await User.findOne({ role: "Manager", _id: new mongoose.Types.ObjectId(userid) });
             if (!manager) {
                 return res.status(404).json({ message: "Manager not found" });
             }
 
-            let photoFilename = "";
+            // Find staff by ID (not rollno, assuming rollno in body is actually the staff _id)
+            const staff = await Staff.findById(rollno);
+            if (!staff) {
+                return res.status(404).json({ message: "Staff not found" });
+            }
+
+            // Parse sport_id (expecting an array or single value)
+            let sportIds = sport_id
+                ? Array.isArray(sport_id)
+                    ? sport_id
+                    : [sport_id]
+                : staff.sport_id; // Keep existing sports if not provided
+            if (sportIds.length === 0) {
+                log(`NO_SPORTS_PROVIDED_${rollno}`);
+                return res.status(400).json({ message: "At least one sport must be selected" });
+            }
+
+            // Validate all sport IDs
+            const sportDetails = await Sport.findById(sport_id);
+            if (!sportDetails) {
+                log(`SPORT_NOT_FOUND_${sport_id}`);
+                return res.status(404).send("Sport not found");
+            }
+
+            // Handle photo upload
+            let photoFilename = staff.photo;
             if (req.files && req.files.photo) {
-                photoFilename = `${roll_no}_photo${path.extname(req.files.photo[0].originalname)}`;
+                photoFilename = `${staff.roll_no}_photo${path.extname(req.files.photo[0].originalname)}`;
                 fs.renameSync(req.files.photo[0].path, `uploads/${photoFilename}`);
             }
 
-            const mem1= await Staff.findById(rollno);
-            if (!mem1){
-                return res.status(404).json({ message: "Manager not found" });
-            }
-            //console.log(mem1)
-            mem1.name=name || mem1.name;
-            mem1.role=role || mem1.role;
-            mem1.address=address ||mem1.address;
-            if (photoFilename){
-                mem1.photo= photoFilename
-            }
-            mem1.phone=phone|| mem1.phone;
-            mem1.dob=dob || mem1.dob;
-            await mem1.save();
+            // Update staff fields
+            staff.name = name || staff.name;
+            staff.role = role || staff.role;
+            staff.address = address || staff.address;
+            staff.phone = phone || staff.phone;
+            staff.dob = dob || staff.dob;
+            staff.sport_id = sportIds; // Update sport IDs
+            staff.photo = photoFilename;
+
+            await staff.save();
             log(`EDITED_STAFF_SUCCESSFULLY_${rollno}`);
-            return res.status(200).json({message:"SUCCESSFULLY UPDATED"})
+            return res.status(200).json({ message: "SUCCESSFULLY UPDATED" });
         });
     } catch (err) {
         log(`ERROR_EDITING_STAFF`);
-        console.error("Error adding staff:", err);
+        console.error("Error editing staff:", err);
         return res.status(500).json({ message: "Server error" });
     }
 };
-
 const deleteStaff  = async (req,res) =>{
     try{
         const { userid,id } = req.body;
