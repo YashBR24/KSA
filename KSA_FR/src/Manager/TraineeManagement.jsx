@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import moment from "moment";
@@ -11,8 +10,6 @@ import {
   Edit2,
   Eye,
   RefreshCw,
-  CreditCard,
-  BadgeCheck,
   Trash2,
   X,
   Filter,
@@ -36,6 +33,8 @@ const TraineeManagement = () => {
     plan_id: "",
     amount: 0,
     payment_method: "",
+    institute_id: "", // Added
+    sport_id: "", // Added
     start_date: moment().format("YYYY-MM-DD"),
     expiry_date: "",
   });
@@ -65,61 +64,10 @@ const TraineeManagement = () => {
   const [membershipFilter, setMembershipFilter] = useState("all");
   const [selectedTrainee, setSelectedTrainee] = useState(null);
 
-  // Create axios instance with default headers
   const axiosInstance = axios.create({
     headers: {
       Authorization: `Bearer ${localStorage.getItem("userid")}`,
     },
-  });
-
-  const exportToExcel = () => {
-    if (trainees.length === 0) {
-      alert("No trainee data available for export.");
-      return;
-    }
-    const excelData = trainees.map((trainee) => ({
-      Name: trainee.name,
-      "Father's Name": trainee.father,
-      Phone: trainee.phone,
-      DOB: moment(trainee.dob).format("DD-MM-YYYY"),
-      Address: trainee.address,
-      Plan: trainee.plan_id,
-      "Start Date": moment(trainee.start_date).format("DD-MM-YYYY"),
-      "Expiry Date": moment(trainee.expiry_date).format("DD-MM-YYYY"),
-      "Amount Paid": `₹${trainee.amount}`,
-      Active: trainee.active ? "Yes" : "No",
-    }));
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Trainees");
-    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-    const blob = new Blob([excelBuffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
-    });
-    saveAs(blob, `Trainee_Data_${moment().format("YYYYMMDD")}.xlsx`);
-  };
-
-  const handleViewTrainee = (trainee) => {
-    setSelectedTrainee(trainee);
-  };
-
-  const handleClosePopup = () => {
-    setSelectedTrainee(null);
-  };
-
-  const filteredTrainees = trainees.filter((trainee) => {
-    const searchLower = searchQuery.toLowerCase();
-    const matchesSearch =
-      trainee.name.toLowerCase().includes(searchLower) ||
-      trainee.roll_no.toLowerCase().includes(searchLower);
-    const today = moment();
-    const isExpired = moment(trainee.to).isBefore(today, "day");
-    const isActive = !isExpired;
-    const matchesMembershipFilter =
-      membershipFilter === "all" ||
-      (membershipFilter === "expired" && isExpired) ||
-      (membershipFilter === "active" && isActive);
-    return matchesSearch && matchesMembershipFilter;
   });
 
   useEffect(() => {
@@ -174,7 +122,6 @@ const TraineeManagement = () => {
     }
   };
 
-  // Functions to get sport and institute names
   const getSportName = (sportId) => {
     const sport = sports.find((s) => s._id === sportId);
     return sport ? sport.name : sportId || "N/A";
@@ -275,8 +222,15 @@ const TraineeManagement = () => {
   const handleTraineeSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData();
+    
     Object.keys(traineeFormData).forEach((key) => {
-      formData.append(key, traineeFormData[key]);
+      if (key === "photo" || key === "traineeSignature" || key === "fatherSignature") {
+        if (traineeFormData[key]) {
+          formData.append(key, traineeFormData[key]);
+        }
+      } else {
+        formData.append(key, traineeFormData[key]);
+      }
     });
 
     try {
@@ -289,22 +243,46 @@ const TraineeManagement = () => {
       const config = {
         headers: {
           Authorization: `Bearer ${userId}`,
+          "Content-Type": "multipart/form-data",
         },
+        responseType: editingTrainee ? "json" : "blob",
       };
 
+      let response;
       if (editingTrainee) {
-        await axios.put(`${ip}/api/manager/update-trainee/${editingTrainee._id}`, formData, config);
+        response = await axios.put(
+          `${ip}/api/manager/update-trainee/${editingTrainee._id}`,
+          formData,
+          config
+        );
       } else {
-        await axios.post(`${ip}/api/manager/add-new-trainee`, formData, config);
+        response = await axios.post(`${ip}/api/manager/add-new-trainee`, formData, config);
+        const blob = new Blob([response.data], { type: "application/pdf" });
+        const rollNo = traineeFormData.phone || "new_trainee";
+        saveAs(blob, `trainee_${rollNo}_details.pdf`);
       }
 
-      fetchTrainees();
+      await fetchTrainees();
       setShowTraineePopup(false);
       setEditingTrainee(null);
       setError("");
     } catch (error) {
       console.error("Error submitting trainee data:", error);
-      setError(error.response?.data?.message || "Failed to submit trainee data. Please try again.");
+      if (error.response && error.response.data) {
+        if (error.response.data instanceof Blob) {
+          const errorText = await error.response.data.text();
+          try {
+            const errorJson = JSON.parse(errorText);
+            setError(errorJson.message || "Failed to submit trainee data. Please try again.");
+          } catch {
+            setError(errorText || "Failed to submit trainee data. Please try again.");
+          }
+        } else {
+          setError(error.response.data.message || "Failed to submit trainee data. Please try again.");
+        }
+      } else {
+        setError("Failed to submit trainee data. Please try again.");
+      }
     }
   };
 
@@ -317,19 +295,29 @@ const TraineeManagement = () => {
         return;
       }
 
+      // Validate required fields
+      if (!renewalFormData.institute_id || !renewalFormData.sport_id) {
+        setError("Please select an institute and sport.");
+        return;
+      }
+
       const config = {
         headers: {
           Authorization: `Bearer ${userId}`,
         },
       };
 
-      await axios.post(`${ip}/api/academy/renewal`, renewalFormData, config);
+      const response = await axios.post(`${ip}/api/academy/renewal`, renewalFormData, config);
       fetchTrainees();
       setShowRenewalPopup(false);
       setError("");
+      alert(response.data.message || "Membership renewed successfully!");
     } catch (error) {
       console.error("Error submitting renewal data:", error);
-      setError(error.response?.data?.message || "Failed to submit renewal data. Please try again.");
+      const errorMessage =
+        error.response?.data?.message ||
+        "Failed to submit renewal data. Please check your inputs and try again.";
+      setError(errorMessage);
     }
   };
 
@@ -344,6 +332,10 @@ const TraineeManagement = () => {
             expiry_date: trainee.to ? moment(trainee.to).format("YYYY-MM-DD") : "",
             sport_id: trainee.sport_id || "",
             institute_id: trainee.institute_id || "",
+            plan_id: trainee.plan_id || "",
+            photo: null,
+            traineeSignature: null,
+            fatherSignature: null,
           }
         : {
             name: "",
@@ -378,9 +370,11 @@ const TraineeManagement = () => {
       trainee_id: trainee._id,
       name: trainee.name,
       roll_no: trainee.roll_no,
-      plan_id: trainee.plan_id,
-      amount: trainee.amount,
+      plan_id: trainee.plan_id || "",
+      amount: trainee.amount || 0,
       payment_method: "",
+      institute_id: trainee.institute_id || "", // Pre-fill institute_id
+      sport_id: trainee.sport_id || "", // Pre-fill sport_id
       start_date: startDate,
       expiry_date: expiryDate,
     });
@@ -420,6 +414,58 @@ const TraineeManagement = () => {
       setError(error.response?.data?.message || "Failed to delete trainee. Please try again.");
     }
   };
+
+  const exportToExcel = () => {
+    if (trainees.length === 0) {
+      alert("No trainee data available for export.");
+      return;
+    }
+    const excelData = trainees.map((trainee) => ({
+      Name: trainee.name,
+      "Father's Name": trainee.father,
+      Phone: trainee.phone,
+      DOB: moment(trainee.dob).format("DD-MM-YYYY"),
+      Address: trainee.address,
+      Plan: trainee.plan_id,
+      Sport: getSportName(trainee.sport_id),
+      Institute: getInstituteName(trainee.institute_id),
+      "Start Date": moment(trainee.start_date).format("DD-MM-YYYY"),
+      "Expiry Date": moment(trainee.expiry_date).format("DD-MM-YYYY"),
+      "Amount Paid": `₹${trainee.amount}`,
+      Active: trainee.active ? "Yes" : "No",
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Trainees");
+    const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    const blob = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
+    });
+    saveAs(blob, `Trainee_Data_${moment().format("YYYYMMDD")}.xlsx`);
+  };
+
+  const handleViewTrainee = (trainee) => {
+    setSelectedTrainee(trainee);
+  };
+
+  const handleClosePopup = () => {
+    setSelectedTrainee(null);
+  };
+
+  const filteredTrainees = trainees.filter((trainee) => {
+    const searchLower = searchQuery.toLowerCase();
+    const matchesSearch =
+      trainee.name.toLowerCase().includes(searchLower) ||
+      trainee.roll_no.toLowerCase().includes(searchLower);
+    const today = moment();
+    const isExpired = moment(trainee.to).isBefore(today, "day");
+    const isActive = !isExpired;
+    const matchesMembershipFilter =
+      membershipFilter === "all" ||
+      (membershipFilter === "expired" && isExpired) ||
+      (membershipFilter === "active" && isActive);
+    return matchesSearch && matchesMembershipFilter;
+  });
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-0 md:p-6">
@@ -480,7 +526,7 @@ const TraineeManagement = () => {
             <div className="flex items-start p-4 gap-4">
               <div className="flex-shrink-0">
                 <img
-                  src={`${ip}/uploads/${trainee.photo}`}
+                  src={`${ip}/Uploads/${trainee.photo}`}
                   alt={trainee.name}
                   className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
                   onClick={() => handleViewTrainee(trainee)}
@@ -490,6 +536,12 @@ const TraineeManagement = () => {
                 <h3 className="text-lg font-semibold text-gray-900 truncate">{trainee.name}</h3>
                 <p className="text-sm text-gray-600">
                   Roll No: <span className="font-medium">{trainee.roll_no}</span>
+                </p>
+                <p className="text-sm text-gray-600">
+                  Sport: <span className="font-medium">{getSportName(trainee.sport_id)}</span>
+                </p>
+                <p className="text-sm text-gray-600">
+                  Institute: <span className="font-medium">{getInstituteName(trainee.institute_id)}</span>
                 </p>
                 <p className="text-sm text-gray-600">
                   Expires: <span className="font-medium">{formatDateTime1(trainee.to)}</span>
@@ -549,7 +601,7 @@ const TraineeManagement = () => {
                 <div className="flex flex-col items-center">
                   <span className="text-sm text-gray-600 mb-2">Trainee Photo</span>
                   <img
-                    src={`${ip}/uploads/${selectedTrainee.photo}`}
+                    src={`${ip}/Uploads/${selectedTrainee.photo}`}
                     alt="Trainee"
                     className="w-32 h-44 object-cover rounded-lg border border-gray-200"
                   />
@@ -557,7 +609,7 @@ const TraineeManagement = () => {
                 <div className="flex flex-col items-center">
                   <span className="text-sm text-gray-600 mb-2">Trainee's Signature</span>
                   <img
-                    src={`${ip}/uploads/${selectedTrainee.signature}`}
+                    src={`${ip}/Uploads/${selectedTrainee.signature}`}
                     alt="Trainee Signature"
                     className="w-32 h-44 object-cover rounded-lg border border-gray-200"
                   />
@@ -565,7 +617,7 @@ const TraineeManagement = () => {
                 <div className="flex flex-col items-center">
                   <span className="text-sm text-gray-600 mb-2">Father's Signature</span>
                   <img
-                    src={`${ip}/uploads/${selectedTrainee.father_signature}`}
+                    src={`${ip}/Uploads/${selectedTrainee.father_signature}`}
                     alt="Father's Signature"
                     className="w-32 h-44 object-cover rounded-lg border border-gray-200"
                   />
@@ -856,7 +908,7 @@ const TraineeManagement = () => {
                       type="submit"
                       className="px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-medium transition-colors"
                     >
-                      {editingTrainee ? "Update Trainee" : "Add Trainee"}
+                      {editingTrainee ? "Update Trainee" : "Add Trainee & Download PDF"}
                     </button>
                   </div>
                 </form>
@@ -870,100 +922,134 @@ const TraineeManagement = () => {
         <div className="fixed inset-0 z-50 bg-gray-700 bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl h-auto max-h-[90%] overflow-y-auto mx-auto">
             <h3 className="text-2xl font-semibold mb-6 text-center">Renew Membership</h3>
-            <form onSubmit={handleRenewalSubmit}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Student Name</label>
-                  <input
-                    type="text"
-                    value={renewalFormData.name}
-                    className="mt-1 block w-full p-2 border border-gray-300 rounded-md bg-gray-100"
-                    readOnly
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Roll Number</label>
-                  <input
-                    type="text"
-                    value={renewalFormData.roll_no}
-                    className="mt-1 block w-full p-2 border border-gray-300 rounded-md bg-gray-100"
-                    readOnly
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Plan Selection</label>
-                  <select
-                    name="plan_id"
-                    value={renewalFormData.plan_id}
-                    onChange={handleRenewalInputChange}
-                    className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-                    required
-                  >
-                    <option value="">Select a plan</option>
-                    {plans.map((plan) => (
-                      <option key={plan._id} value={plan._id}>
-                        {plan.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Amount</label>
-                  <input
-                    type="number"
-                    name="amount"
-                    value={renewalFormData.amount}
-                    onChange={handleRenewalInputChange}
-                    className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Payment Method</label>
-                  <select
-                    name="payment_method"
-                    value={renewalFormData.payment_method}
-                    onChange={handleRenewalInputChange}
-                    className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
-                    required
-                  >
-                    <option value="" disabled>
-                      Select Payment Method
-                    </option>
-                    <option value="CASH">Cash</option>
-                    <option value="UPI">UPI</option>
-                    <option value="CARD">Card</option>
-                    <option value="CHEQUE">Cheque</option>
-                    <option value="NET BANKING">Net Banking</option>
-                    <option value="DEMAND DRAFT">Demand Draft</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Start Date</label>
-                  <input
-                    type="date"
-                    name="start_date"
-                    value={renewalFormData.start_date}
-                    onChange={handleRenewalInputChange}
-                    className="mt-1 block w-full p-2 border border-gray-300 rounded-md bg-gray-100"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Expiry Date</label>
-                  <input
-                    type="date"
-                    name="expiry_date"
-                    value={renewalFormData.expiry_date}
-                    onChange={(e) =>
-                      setRenewalFormData({
-                        ...renewalFormData,
-                        expiry_date: e.target.value,
-                      })
-                    }
-                    className="mt-1 block w-full p-2 border border-gray-300 rounded-md bg-gray-100"
-                  />
-                </div>
+            <form onSubmit={handleRenewalSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Student Name</label>
+                <input
+                  type="text"
+                  value={renewalFormData.name}
+                  className="mt-1 block w-full p-2 border border-gray-300 rounded-md bg-gray-100"
+                  readOnly
+                />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Roll Number</label>
+                <input
+                  type="text"
+                  value={renewalFormData.roll_no}
+                  className="mt-1 block w-full p-2 border border-gray-300 rounded-md bg-gray-100"
+                  readOnly
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Select Institute</label>
+                <select
+                  name="institute_id"
+                  value={renewalFormData.institute_id}
+                  onChange={handleRenewalInputChange}
+                  className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                  required
+                >
+                  <option value="">Select an institute</option>
+                  {institutes.map((institute) => (
+                    <option key={institute._id} value={institute._id}>
+                      {institute.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Select Sport</label>
+                <select
+                  name="sport_id"
+                  value={renewalFormData.sport_id}
+                  onChange={handleRenewalInputChange}
+                  className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                  required
+                >
+                  <option value="">Select a sport</option>
+                  {sports.map((sport) => (
+                    <option key={sport._id} value={sport._id}>
+                      {sport.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Plan Selection</label>
+                <select
+                  name="plan_id"
+                  value={renewalFormData.plan_id}
+                  onChange={handleRenewalInputChange}
+                  className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                  required
+                >
+                  <option value="">Select a plan</option>
+                  {plans.map((plan) => (
+                    <option key={plan._id} value={plan._id}>
+                      {plan.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Amount</label>
+                <input
+                  type="number"
+                  name="amount"
+                  value={renewalFormData.amount}
+                  onChange={handleRenewalInputChange}
+                  className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                  required
+                  min="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Payment Method</label>
+                <select
+                  name="payment_method"
+                  value={renewalFormData.payment_method}
+                  onChange={handleRenewalInputChange}
+                  className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                  required
+                >
+                  <option value="" disabled>
+                    Select Payment Method
+                  </option>
+                  <option value="CASH">Cash</option>
+                  <option value="UPI">UPI</option>
+                  <option value="CARD">Card</option>
+                  <option value="CHEQUE">Cheque</option>
+                  <option value="NET BANKING">Net Banking</option>
+                  <option value="DEMAND DRAFT">Demand Draft</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Start Date</label>
+                <input
+                  type="date"
+                  name="start_date"
+                  value={renewalFormData.start_date}
+                  onChange={handleRenewalInputChange}
+                  className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Expiry Date</label>
+                <input
+                  type="date"
+                  name="expiry_date"
+                  value={renewalFormData.expiry_date}
+                  onChange={handleRenewalInputChange}
+                  className="mt-1 block w-full p-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-red-700 text-sm">{error}</p>
+                </div>
+              )}
               <div className="flex justify-end mt-6 space-x-4">
                 <button
                   type="button"

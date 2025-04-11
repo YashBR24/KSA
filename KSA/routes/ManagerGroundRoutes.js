@@ -1,281 +1,7 @@
-// const express = require('express');
-// const { getActivePlans ,getAllBookings, getAllPlans,getStaffAttendance,getUpcomingBookings,takeAttendance, getAttendance, updateTrainees,
-//     newTrainee
-// } = require('../controllers/ManagerGroundController');
-// const multer = require("multer");
-// const path = require("path");
-// const router = express.Router();
-// const DetailsAcademy= require('../models/DetailsAcademy');
-// const Academy= require('../models/Academy');
-//
-// const { log } = require("../Logs/logs")
-// router.post('/all-plans', getAllPlans);
-// router.post('/all-bookings', getAllBookings);
-// const moment = require('moment');
-// router.post('/take-attendance', takeAttendance);
-// router.post('/trainee-attendance', getAttendance);
-//
-// router.post('/update-trainee-student', updateTrainees);
-// router.post('/staff-attendance', getStaffAttendance);
-// const storage = multer.diskStorage({
-//     destination: (req, file, cb) => {
-//         cb(null, "uploads/");
-//     },
-//     filename: (req, file, cb) => {
-//         cb(null, Date.now() + path.extname(file.originalname));
-//     },
-// });
-// const fs = require('fs');
-// const bal_id = "677ba181a9f86714ba5b860b"
-// const upload = multer({
-//     storage,
-//     fileFilter: (req, file, cb) => {
-//         // Ensure only expected file types are allowed (e.g., images)
-//         const allowedTypes = /jpeg|jpg|png/;
-//         const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-//         if (extname) {
-//             cb(null, true);
-//         } else {
-//             cb(new Error("Only images are allowed"));
-//         }
-//     },
-// });
-// const Balance = require("../models/Balance");
-// const Transaction = require("../models/Transaction");
-// const User = require("../models/user");
-// router.post(
-//     "/add-new-trainee",
-//     upload.fields([
-//         { name: "photo", maxCount: 1 },
-//         { name: "traineeSignature", maxCount: 1 },
-//         { name: "fatherSignature", maxCount: 1 },
-//     ]),
-//     async (req, res) => {
-//         try {
-//             const {
-//                 name,
-//                 payment_method,
-//                 father,
-//                 dob,
-//                 address,
-//                 phone,
-//                 plan_id,
-//                 amount,
-//                 occupation,
-//                 current_class,
-//                 name_of_school,
-//                 dateAndPlace,
-//                 start_date,
-//                 expiry_date
-//             } = req.body;
-//             log(`ADD_NEW_TRAINEE_${name}_${phone}`);
-//             // Calculate roll_no based on total document count
-//             const rollno = await Academy.countDocuments();
-//             const roll_no = rollno + 20250001;
-//
-//             // Ensure plan exists
-//             const planDetails = await DetailsAcademy.findById(plan_id);
-//             if (!planDetails) return res.status(404).send("Plan not found");
-//
-//             const session = planDetails.name;
-//             const plan_time = planDetails.plan_limit + " Days";
-//             const today = moment();
-//             const firstDate = today.add(1, "days");
-//             const secondDate = moment(today).add(planDetails.plan_limit, "days");
-//
-//             // Assign filenames using roll_no for consistency
-//             const photoFilename = `${roll_no}_photo${path.extname(req.files.photo[0]?.originalname)}`;
-//             const traineeSignatureFilename = `${roll_no}_traineeSignature${path.extname(req.files.traineeSignature[0]?.originalname)}`;
-//             const fatherSignatureFilename = `${roll_no}_fatherSignature${path.extname(req.files.fatherSignature[0]?.originalname)}`;
-//
-//             // Rename uploaded files to match the format
-//             fs.renameSync(req.files.photo[0].path, `uploads/${photoFilename}`);
-//             try{
-//             fs.renameSync(req.files.traineeSignature[0]?.path, `uploads/${traineeSignatureFilename}`);
-//             fs.renameSync(req.files.fatherSignature[0]?.path, `uploads/${fatherSignatureFilename}`);
-//         }catch(error){
-//             //console.log("pass")
-//         }
-//         //console.log("CONTINUE")
-//             // Create new trainee entry
-//             const newTrainee = new Academy({
-//                 roll_no,
-//                 name,
-//                 father,
-//                 dob,
-//                 address,
-//                 session,
-//                 from: start_date,
-//                 to: expiry_date,
-//                 phone,
-//                 plan_id,
-//                 amount,
-//                 occupation,
-//                 current_class,
-//                 name_of_school,
-//                 date_and_place: dateAndPlace,
-//                 photo: photoFilename,
-//                 signature: traineeSignatureFilename||"",
-//                 father_signature: fatherSignatureFilename||"",
-//                 delete:false
-//             });
-//
-//             // Balance and transaction handling
-//             const balance1 = await Balance.findById(bal_id);
-//             const bal = balance1.balance;
-//
-//             const newTrans = new Transaction({
-//                 amt_in_out: "IN",
-//                 amount: Number(amount)||0,
-//                 description: "ACADEMY_NEW_" + roll_no,
-//                 balance_before_transaction: bal,
-//                 method: payment_method,
-//                 balance_after_transaction: (Number(amount)||0) + Number(bal),
-//                 identification: "ACADEMY_NEW_" + roll_no,
-//             });
-//
-//             balance1.balance = (Number(amount) ||0)+ Number(bal);
-//
-//             // Save both trainee and transaction
-//             await newTrainee.save();
-//             await balance1.save();
-//             await newTrans.save();
-//
-//             res.send("Trainee added successfully");
-//         } catch (error) {
-//             log(`ERROR_ADDING_TRAINEE`);
-//             console.error(error);
-//             res.status(500).send("Server error");
-//         }
-//     }
-// );
-//
-// router.put(
-//     "/update-trainee/:id",
-//     upload.fields([
-//         { name: "photo", maxCount: 1 },
-//         { name: "traineeSignature", maxCount: 1 },
-//         { name: "fatherSignature", maxCount: 1 },
-//     ]),
-//     async (req, res) => {
-//         //console.log("Uploaded Files:", req.files);
-//         log(`UPATING_TRAINEE_${req.params.id}`);
-//         //console.log("*********************************************************************************************************************************************************************************************************")
-//         try {
-//             const traineeId = req.params.id;
-//             const {
-//                 name,
-//                 father,
-//                 dob,
-//                 address,
-//                 phone,
-//                 occupation,
-//                 current_class,
-//                 name_of_school,
-//                 start_date,
-//                 expiry_date,
-//                 dateAndPlace,
-//             } = req.body;
-//             //console.log(req.body)
-//             // Find existing trainee
-//             const existingTrainee = await Academy.findById(traineeId);
-//             //console.log(1,"TRAINEE FETCHED")
-//             if (!existingTrainee) return res.status(404).send("Trainee not found");
-//             //console.log(2,"TRAINEE EXISTS")
-//             // Check if plan exists
-//             // Update file names if new files are uploaded
-//             let photoFilename = existingTrainee.photo;
-//             let traineeSignatureFilename = existingTrainee.signature;
-//             let fatherSignatureFilename = existingTrainee.father_signature;
-//             //console.log(3,"PHOTO FETCHED")
-//             try {
-//                 if (req.files?.photo?.[0]) {
-//                     photoFilename = `${existingTrainee.roll_no}_photo${path.extname(req.files.photo[0].originalname)}`;
-//                     fs.renameSync(req.files.photo[0].path, `uploads/${photoFilename}`);
-//                 }
-//             } catch (error) {
-//                 //console.log("Error renaming photo:", error);
-//             }
-//
-//             try{
-//                 if (req.files?.traineeSignature?.[0]) {
-//                 traineeSignatureFilename = `${existingTrainee.roll_no}_traineeSignature${path.extname(req.files.traineeSignature[0]?.originalname)}`;
-//                 fs.renameSync(req.files.traineeSignature[0]?.path, `uploads/${traineeSignatureFilename}`);
-//             }
-//             //console.log(5,"RENAME")
-//         }catch (error){
-//             //console.log(error)
-//         }
-//         try{
-//             //console.log(6,"RENAME")
-//             if (req.files?.fatherSignature?.[0]) {
-//                 fatherSignatureFilename = `${existingTrainee.roll_no}_fatherSignature${path.extname(req.files.fatherSignature[0]?.originalname)}`;
-//                 fs.renameSync(req.files.fatherSignature[0]?.path, `uploads/${fatherSignatureFilename}`);
-//             }
-//         }catch (error){
-//                 //console.log(error)
-//             }
-//             //console.log(7,"ALL PHOTO RENAMED")
-//             // Update trainee details
-//             existingTrainee.name = name || existingTrainee.name;
-//             existingTrainee.father = father || existingTrainee.father;
-//             existingTrainee.dob = dob || existingTrainee.dob;
-//             existingTrainee.address = address || existingTrainee.address;
-//             existingTrainee.phone = phone || existingTrainee.phone;
-//             existingTrainee.occupation = occupation || existingTrainee.occupation;
-//             existingTrainee.current_class = current_class || existingTrainee.current_class;
-//             existingTrainee.name_of_school = name_of_school || existingTrainee.name_of_school;
-//             existingTrainee.date_and_place = dateAndPlace || existingTrainee.date_and_place;
-//             existingTrainee.photo = photoFilename||"";
-//             existingTrainee.signature = traineeSignatureFilename||"";
-//             existingTrainee.father_signature = fatherSignatureFilename||"";
-//             existingTrainee.from=start_date;
-//             existingTrainee.to=expiry_date;
-//             //console.log(8,"UPDATED BUT NOT SAVED")
-//             // Handle balance update if amount is changed
-//
-//             await existingTrainee.save();
-//             //console.log(9,"SUCCESS")
-//             res.status(200).send("Trainee updated successfully");
-//         } catch (error) {
-//             log(`ERROR_UPDATING_TRAINEE`);
-//             console.error(error);
-//             res.status(500).send("Server error");
-//         }
-//     }
-// );
-//
-//
-// router.post("/delete-trainee",async (req,res)=>{
-//     try{
-//         const {userid,id}=req.body;
-//     log(`DELETING_TRAINEE_${id}`);
-//     const result1 = await User.findById(userid);
-//     if (!result1) {
-//         return res.status(400).json("Unauthenticated User");
-//     }
-//     const Trainee=await Academy.findById(id);
-//     if (!Trainee){
-//         return res.status(404).json("Trainee Not Found")
-//     }
-//     Trainee.active=false;
-//     Trainee.delete=true;
-//     await Trainee.save()
-//     return res.status(200).json("Trainee Deleted");
-// }
-// catch(err){
-//     log(`ERROR_DELETING_TRAINEE`);
-//     //console.log(err);
-//     return res.status(500).json({message:"SERVER ERROR"})
-// }
-// })
-//
-// module.exports = router;
-
-
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const PDFDocument = require('pdfkit');
 const moment = require('moment');
 const multer = require('multer');
 const router = express.Router();
@@ -342,6 +68,209 @@ const calculateBalanceFromTransactions = async (instituteId) => {
         }
     });
     return balance;
+};
+
+// Helper function to generate PDF
+const generateTraineePDF = (traineeData, photoPath, traineeSignaturePath, fatherSignaturePath) => {
+    return new Promise((resolve, reject) => {
+        const doc = new PDFDocument({
+            size: 'A4',
+            margin: 30, // Further reduced margin
+            bufferPages: true,
+            autoFirstPage: true
+        });
+        const pdfPath = path.join(__dirname, `../uploads/trainee_${traineeData.phone}.pdf`);
+        const stream = fs.createWriteStream(pdfPath);
+        doc.pipe(stream);
+
+        // Calculate available page height (A4 is 841.89 points tall)
+        const pageHeight = 841.89 - 60; // 30pt margin top and bottom
+
+        // Colors
+        const colors = {
+            primary: '#1565C0',
+            secondary: '#2196F3',
+            text: '#212121',
+            textSecondary: '#5D6D7E'
+        };
+
+        // Header (smaller)
+        doc.rect(0, 0, doc.page.width, 60) // Very compact header
+            .fill(colors.primary);
+
+        // Title area
+        doc.fontSize(16) // Smaller title font
+            .fillColor('#FFFFFF')
+            .font('Helvetica-Bold')
+            .text('Trainee Registration Form', 40, 15)
+            .fontSize(8) // Tiny subtitle
+            .text(`Generated on: ${moment().format('DD/MM/YYYY HH:mm')}`, 40, 35);
+
+        // Institute info
+        doc.fontSize(9)
+            .fillColor('#FFFFFF')
+            .text(`Institute: ${traineeData.institute_name || 'N/A'}`, doc.page.width - 180, 15, { width: 150, align: 'right' })
+            .text(`Roll No: ${traineeData.roll_no}`, doc.page.width - 180, 30, { width: 150, align: 'right' });
+
+        let y = 70; // Start content sooner
+
+        // Function to add compact section headers
+        const createSectionHeader = (title, yPos) => {
+            doc.rect(30, yPos, doc.page.width - 60, 20)
+                .fill(colors.secondary);
+
+            doc.fontSize(11)
+                .fillColor('#FFFFFF')
+                .font('Helvetica-Bold')
+                .text(title, 40, yPos + 5);
+
+            return yPos + 20;
+        };
+
+        // Personal Information Section (more compact)
+        y = createSectionHeader('Personal Information', y);
+
+        // Create content background (smaller)
+        doc.rect(30, y, doc.page.width - 60, 110).fill('#FFFFFF').stroke('#E0E0E0');
+
+        y += 8;
+
+        // Compact two-column layout
+        const leftColumn = 40;
+        const rightColumn = doc.page.width / 2;
+        const lineHeight = 18; // Even more reduced line height
+
+        // Function to add fields in most compact way
+        const addField = (label, value, x, currentY) => {
+            doc.fontSize(8) // Very small font size
+                .font('Helvetica-Bold')
+                .fillColor(colors.text)
+                .text(label + ':', x, currentY);
+
+            doc.font('Helvetica')
+                .fillColor(colors.textSecondary)
+                .text(value || 'N/A', x + 70, currentY, { width: 140 });
+        };
+
+        // Left column fields
+        addField('Name', traineeData.name || 'N/A', leftColumn, y);
+        addField("Father's Name", traineeData.father || 'N/A', leftColumn, y + lineHeight);
+        addField('Date of Birth', moment(traineeData.dob).format('DD/MM/YYYY'), leftColumn, y + lineHeight * 2);
+        addField('Phone', traineeData.phone || 'N/A', leftColumn, y + lineHeight * 3);
+        addField('Occupation', traineeData.occupation || 'N/A', leftColumn, y + lineHeight * 4);
+
+        // Right column fields
+        addField('Sport', traineeData.sport_name || 'N/A', rightColumn, y);
+        addField('Plan', traineeData.session || 'N/A', rightColumn, y + lineHeight);
+        addField('Start Date', moment(traineeData.from).format('DD/MM/YYYY'), rightColumn, y + lineHeight * 2);
+        addField('End Date', moment(traineeData.to).format('DD/MM/YYYY'), rightColumn, y + lineHeight * 3);
+        addField('Amount Paid', `₹${traineeData.amount || '0'}`, rightColumn, y + lineHeight * 4);
+
+        y += 100; // End of personal info section with reduced space
+
+        // Contact Details Section (more compact)
+        y = createSectionHeader('Contact Details', y);
+
+        // Create white section content background (smaller)
+        doc.rect(30, y, doc.page.width - 60, 40).fill('#FFFFFF').stroke('#E0E0E0');
+
+        y += 8;
+
+        doc.fontSize(8)
+            .font('Helvetica-Bold')
+            .fillColor(colors.text)
+            .text('Address:', 40, y);
+
+        doc.font('Helvetica')
+            .fillColor(colors.textSecondary)
+            .text(traineeData.address || 'N/A', 40, y + 12, { width: doc.page.width - 80 });
+
+        y += 45; // Further reduced space after address
+
+        // Photos and Signatures Section
+        y = createSectionHeader('Photos & Signatures', y);
+
+        // Create white section content background (smaller)
+        const photoSectionHeight = 80; // Fixed height for photos section
+        doc.rect(30, y, doc.page.width - 60, photoSectionHeight).fill('#FFFFFF').stroke('#E0E0E0');
+
+        // Ensure photos section fits without going to next page
+        if (y + photoSectionHeight + 30 > pageHeight) {
+            // If we're too close to the bottom, reduce photo section height
+            const availableHeight = pageHeight - y - 30; // 30 for footer
+            photoSectionHeight = Math.max(availableHeight, 60); // At least 60pt for photos
+        }
+
+        y += 5;
+
+        // Very compact image display
+        const imageWidth = 90;
+        const imageHeight = 50;
+        const availableSpace = doc.page.width - 60 - 40;
+        const spacing = (availableSpace - (imageWidth * 3)) / 2;
+
+        const photoX = 40;
+        const traineeSignatureX = photoX + imageWidth + spacing;
+        const fatherSignatureX = traineeSignatureX + imageWidth + spacing;
+
+        // Helper function for ultra compact image display
+        const displayImage = (imagePath, x, label) => {
+            if (imagePath && fs.existsSync(path.join(__dirname, '../', imagePath))) {
+                doc.image(path.join(__dirname, '../', imagePath), x, y, {
+                    fit: [imageWidth, imageHeight],
+                    align: 'center'
+                });
+
+                // Thinner border
+                doc.rect(x, y, imageWidth, imageHeight)
+                    .lineWidth(0.25)
+                    .stroke('#CCCCCC');
+
+                // Even smaller label
+                doc.fontSize(7)
+                    .fillColor(colors.text)
+                    .font('Helvetica-Bold')
+                    .text(label, x, y + imageHeight + 3, { width: imageWidth, align: 'center' });
+            } else {
+                // Minimalist placeholder
+                doc.rect(x, y, imageWidth, imageHeight)
+                    .lineWidth(0.25)
+                    .stroke('#CCCCCC')
+                    .fillColor('#F5F5F5')
+                    .fill();
+
+                doc.fontSize(7)
+                    .fillColor(colors.textSecondary)
+                    .text('No Image', x, y + (imageHeight/2) - 3, { width: imageWidth, align: 'center' });
+
+                doc.fontSize(7)
+                    .fillColor(colors.text)
+                    .font('Helvetica-Bold')
+                    .text(label, x, y + imageHeight + 3, { width: imageWidth, align: 'center' });
+            }
+        };
+
+        // Display images with minimal layout
+        displayImage(photoPath, photoX, 'Trainee Photo');
+        displayImage(traineeSignaturePath, traineeSignatureX, 'Trainee Signature');
+        displayImage(fatherSignaturePath, fatherSignatureX, "Father's Signature");
+
+        // Footer at absolute bottom of page
+        const footerY = pageHeight;
+        doc.rect(0, footerY, doc.page.width, 30)
+            .fill(colors.primary);
+
+        doc.fontSize(8)
+            .fillColor('#FFFFFF')
+            .text('Powered by xAI Academy Management System', 0, footerY + 10, {
+                align: 'center',
+                width: doc.page.width
+            });
+
+        doc.end();
+        stream.on('finish', () => resolve(pdfPath));
+        stream.on('error', reject);
+    });
 };
 
 // Routes from controllers
@@ -501,8 +430,46 @@ router.post("/add-new-trainee", upload.fields([
             log(`TRANSACTION_RECORDED_${roll_no}_${amount}`);
         }
 
+        // Generate PDF
+        const traineeData = {
+            roll_no,
+            name,
+            father,
+            dob,
+            address,
+            phone,
+            sport_name: sportDetails.name,
+            session,
+            from: firstDate,
+            to: secondDate,
+            amount,
+            occupation,
+            current_class,
+            name_of_school,
+            date_and_place: dateAndPlace,
+            institute_name: instituteDetails.name,
+        };
+
+        const pdfPath = await generateTraineePDF(
+            traineeData,
+            photoFilename ? path.join(uploadDir, photoFilename) : null,
+            traineeSignatureFilename ? path.join(uploadDir, traineeSignatureFilename) : null,
+            fatherSignatureFilename ? path.join(uploadDir, fatherSignatureFilename) : null
+        );
+
+        // Send the PDF as a download
+        res.download(pdfPath, `trainee_${roll_no}_details.pdf`, (err) => {
+            if (err) {
+                log(`ERROR_SENDING_PDF_${roll_no}`);
+                console.error('Error sending PDF:', err);
+            }
+            // Clean up the PDF file after download
+            fs.unlink(pdfPath, (unlinkErr) => {
+                if (unlinkErr) console.error('Error deleting PDF:', unlinkErr);
+            });
+        });
+
         log(`SUCCESSFULLY_ADDED_TRAINEE_${roll_no}`);
-        res.send("Trainee and transaction added successfully!");
     } catch (error) {
         log(`ERROR_ADDING_TRAINEE_${name || 'UNKNOWN'}`);
         console.error('Error in /add-new-trainee:', error);
@@ -521,7 +488,8 @@ router.put("/update-trainee/:id", upload.fields([
         log(`UPDATING_TRAINEE_${traineeId}`);
         const {
             name, father, dob, address, phone, occupation,
-            current_class, name_of_school, start_date, expiry_date, dateAndPlace
+            current_class, name_of_school, start_date, expiry_date, dateAndPlace,
+            sport_id, institute_id, plan_id // Added sport_id, institute_id, and plan_id
         } = req.body;
 
         const existingTrainee = await Academy.findById(traineeId);
@@ -530,6 +498,36 @@ router.put("/update-trainee/:id", upload.fields([
             return res.status(404).send("Trainee not found");
         }
 
+        // Validate sport_id if provided
+        if (sport_id) {
+            const sportDetails = await Sport.findById(sport_id);
+            if (!sportDetails) {
+                log(`SPORT_NOT_FOUND_${sport_id}`);
+                return res.status(404).send("Sport not found");
+            }
+        }
+
+        // Validate institute_id if provided
+        if (institute_id) {
+            const instituteDetails = await Institute.findById(institute_id);
+            if (!instituteDetails) {
+                log(`INSTITUTE_NOT_FOUND_${institute_id}`);
+                return res.status(404).send("Institute not found");
+            }
+        }
+
+        // Validate plan_id and update session if provided
+        let session = existingTrainee.session;
+        if (plan_id) {
+            const planDetails = await DetailsAcademy.findById(plan_id);
+            if (!planDetails) {
+                log(`PLAN_NOT_FOUND_${plan_id}`);
+                return res.status(404).send("Plan not found");
+            }
+            session = planDetails.name; // Update session based on new plan
+        }
+
+        // Handle file uploads
         let photoFilename = existingTrainee.photo;
         let traineeSignatureFilename = existingTrainee.signature;
         let fatherSignatureFilename = existingTrainee.father_signature;
@@ -550,6 +548,7 @@ router.put("/update-trainee/:id", upload.fields([
             fs.renameSync(originalPath, path.join(uploadDir, fatherSignatureFilename));
         }
 
+        // Update trainee fields
         existingTrainee.name = name || existingTrainee.name;
         existingTrainee.father = father || existingTrainee.father;
         existingTrainee.dob = dob || existingTrainee.dob;
@@ -559,11 +558,15 @@ router.put("/update-trainee/:id", upload.fields([
         existingTrainee.current_class = current_class || existingTrainee.current_class;
         existingTrainee.name_of_school = name_of_school || existingTrainee.name_of_school;
         existingTrainee.date_and_place = dateAndPlace || existingTrainee.date_and_place;
+        existingTrainee.from = start_date || existingTrainee.from;
+        existingTrainee.to = expiry_date || existingTrainee.to;
         existingTrainee.photo = photoFilename || "";
         existingTrainee.signature = traineeSignatureFilename || "";
         existingTrainee.father_signature = fatherSignatureFilename || "";
-        existingTrainee.from = start_date || existingTrainee.from;
-        existingTrainee.to = expiry_date || existingTrainee.to;
+        existingTrainee.sport_id = sport_id || existingTrainee.sport_id; // Update sport_id
+        existingTrainee.institute_id = institute_id || existingTrainee.institute_id; // Update institute_id
+        existingTrainee.plan_id = plan_id || existingTrainee.plan_id; // Update plan_id
+        existingTrainee.session = session; // Update session
 
         await existingTrainee.save();
         log(`SUCCESSFULLY_UPDATED_TRAINEE_${traineeId}`);
@@ -574,6 +577,7 @@ router.put("/update-trainee/:id", upload.fields([
         res.status(500).send(`Server error: ${error.message}`);
     }
 });
+
 
 // Delete trainee
 router.post("/delete-trainee", async (req, res) => {

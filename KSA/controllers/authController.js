@@ -2,8 +2,8 @@ const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { generateOTP, isOtpExpired } = require('../utils/otpGenerator');
-const { log } = require("../Logs/logs")
 const { verifyRecaptcha } = require('../utils/recaptcha');
+const {log} = require("../Logs/logs");
 
 exports.signups = async (req, res) => {
 

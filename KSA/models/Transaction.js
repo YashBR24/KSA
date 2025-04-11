@@ -6,7 +6,7 @@ const transactionSchema = new mongoose.Schema({
     amt_in_out: { type: String, required: true, enum: ['IN', 'OUT'] },
     amount: { type: Number, required: true },
     description: { type: String, required: true },
-    identification: { type: String },
+    // identification: { type: String },
     method: {
         type: String,
         required: true,
