@@ -5,6 +5,7 @@ const PDFDocument = require('pdfkit');
 const moment = require('moment');
 const multer = require('multer');
 const router = express.Router();
+const mongoose = require('mongoose'); // Added for ObjectId validation
 
 const {
     getActivePlans,
@@ -29,7 +30,7 @@ const Batch = require('../models/Batch');
 const { log } = require("../Logs/logs");
 
 // Ensure uploads directory exists
-const uploadDir = 'uploads/';
+const uploadDir = 'Uploads/';
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
@@ -96,7 +97,7 @@ const generateTraineePDF = (traineeData, photoPath, traineeSignaturePath, father
         doc.fontSize(16)
             .fillColor('#FFFFFF')
             .font('Helvetica-Bold')
-            .text('Trainee Registration Form', 40, 15)
+            .text('Student Registration Form', 40, 15)
             .fontSize(8)
             .text(`Generated on: ${moment().format('DD/MM/YYYY HH:mm')}`, 40, 35);
 
@@ -142,7 +143,7 @@ const generateTraineePDF = (traineeData, photoPath, traineeSignaturePath, father
 
         addField('Sport', traineeData.sport_name || 'N/A', rightColumn, y);
         addField('Plan', traineeData.session || 'N/A', rightColumn, y + lineHeight);
-        addField('Batch', traineeData.batch_name || 'N/A', rightColumn, y + lineHeight * 2); // Added batch_name
+        addField('Batch', traineeData.batch_name || 'N/A', rightColumn, y + lineHeight * 2);
         addField('Start Date', moment(traineeData.from).format('DD/MM/YYYY'), rightColumn, y + lineHeight * 3);
         addField('End Date', moment(traineeData.to).format('DD/MM/YYYY'), rightColumn, y + lineHeight * 4);
 
@@ -257,6 +258,7 @@ router.get("/institutes", (req, res, next) => {
     getAllInstitutes(req, res, next);
 });
 
+// Add new trainee
 router.post("/add-new-trainee", upload.fields([
     { name: "photo", maxCount: 1 },
     { name: "traineeSignature", maxCount: 1 },
@@ -277,7 +279,7 @@ router.post("/add-new-trainee", upload.fields([
 
         const {
             name, payment_method, father, dob, address, phone,
-            plan_id, sport_id, institute_id, batch_id, amount, occupation, // Added batch_id
+            plan_id, sport_id, institute_id, batch_id, amount, occupation,
             current_class, name_of_school, dateAndPlace, start_date, expiry_date
         } = req.body;
         log(`ADD_NEW_TRAINEE_${name}_${phone}`);
@@ -313,6 +315,12 @@ router.post("/add-new-trainee", upload.fields([
         if (!batchDetails) {
             log(`BATCH_NOT_FOUND_${batch_id}`);
             return res.status(404).send("Batch not found");
+        }
+
+        // Validate that the batch belongs to the selected sport
+        if (batchDetails.sport_id.toString() !== sport_id) {
+            log(`INVALID_BATCH_FOR_SPORT_${batch_id}`);
+            return res.status(400).send("Selected batch does not belong to the selected sport");
         }
 
         const session = planDetails.name;
@@ -353,7 +361,7 @@ router.post("/add-new-trainee", upload.fields([
             plan_id,
             sport_id,
             institute_id,
-            batch_id, // Added batch_id
+            batch_id,
             amount,
             occupation,
             current_class,
@@ -403,7 +411,7 @@ router.post("/add-new-trainee", upload.fields([
             name_of_school,
             date_and_place: dateAndPlace,
             institute_name: instituteDetails.name,
-            batch_name: batchDetails.name, // Added batch_name for PDF
+            batch_name: batchDetails.name,
         };
 
         const pdfPath = await generateTraineePDF(
@@ -425,13 +433,13 @@ router.post("/add-new-trainee", upload.fields([
 
         log(`SUCCESSFULLY_ADDED_TRAINEE_${roll_no}`);
     } catch (error) {
-        log(`ERROR_ADDING_TRAINEE_${name || 'UNKNOWN'}`);
+        log(`ERROR_ADDING_TRAINEE`);
         console.error('Error in /add-new-trainee:', error);
         res.status(500).send(`Server error: ${error.message}`);
     }
 });
 
-// Update trainee
+// Update/Edit trainee
 router.put("/update-trainee/:id", upload.fields([
     { name: "photo", maxCount: 1 },
     { name: "traineeSignature", maxCount: 1 },
@@ -443,7 +451,7 @@ router.put("/update-trainee/:id", upload.fields([
         const {
             name, father, dob, address, phone, occupation,
             current_class, name_of_school, start_date, expiry_date, dateAndPlace,
-            sport_id, institute_id, plan_id, batch_id // Added batch_id
+            sport_id, institute_id, plan_id, batch_id
         } = req.body;
 
         const existingTrainee = await Academy.findById(traineeId);
@@ -473,6 +481,11 @@ router.put("/update-trainee/:id", upload.fields([
             if (!batchDetails) {
                 log(`BATCH_NOT_FOUND_${batch_id}`);
                 return res.status(404).send("Batch not found");
+            }
+            // Validate that the batch belongs to the selected sport
+            if (sport_id && batchDetails.sport_id.toString() !== sport_id) {
+                log(`INVALID_BATCH_FOR_SPORT_${batch_id}`);
+                return res.status(400).send("Selected batch does not belong to the selected sport");
             }
         }
 
@@ -523,7 +536,7 @@ router.put("/update-trainee/:id", upload.fields([
         existingTrainee.sport_id = sport_id || existingTrainee.sport_id;
         existingTrainee.institute_id = institute_id || existingTrainee.institute_id;
         existingTrainee.plan_id = plan_id || existingTrainee.plan_id;
-        existingTrainee.batch_id = batch_id || existingTrainee.batch_id; // Added batch_id
+        existingTrainee.batch_id = batch_id || existingTrainee.batch_id;
         existingTrainee.session = session;
 
         await existingTrainee.save();
@@ -535,7 +548,6 @@ router.put("/update-trainee/:id", upload.fields([
         res.status(500).send(`Server error: ${error.message}`);
     }
 });
-
 
 // Delete trainee
 router.post("/delete-trainee", async (req, res) => {

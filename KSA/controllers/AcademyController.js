@@ -1,127 +1,3 @@
-// const DetailsTG = require('../models/DetailsAcademy');
-// const Status=require('../models/Status');
-// const CryptoJS = require('crypto-js');
-// const User=require('../models/user');
-// const mongoose = require('mongoose');
-// const Students = require('../models/Academy');
-// const { log } = require("../Logs/logs")
-//
-// const getActiveDetailsAcademy = async (req, res) => {
-//     try {
-//         log(`GET_ACTIVE_ACADEMY_STATUS`);
-//         const result = await Status.findOne({ name: 'ADMISSION' }); // Use findOne to get a single document
-//         let status;
-//
-//         if (result && result.active) {  // Check if result exists and active is true
-//             status = "ACTIVE";
-//         } else {
-//             status = "INACTIVE";
-//         }
-//
-//         // //console.log("Backend Status:", status);  // Log status before encryption
-//         const data = CryptoJS.AES.encrypt(status.toString(), "FetchAcademyActiveStatus").toString();
-//         // //console.log("Encrypted Status:", data);  // Log encrypted status
-//
-//         res.status(200).json({ "acstatus": data });  // Ensure the response has acstatus
-//     } catch (error) {
-//         log(`ERROR_IN_FETCHING_ACTIVE_STATUS_ACADEMY`);
-//         console.error('Error Fetching Status:', error);
-//         res.status(500).json({ message: 'Server error' });
-//     }
-// }
-//
-// const getActivePlans = async (req, res) => {
-//     try {
-//         log(`FETCHING_ACTIVE_PLANS_OF_ALL`);
-//         const result = await DetailsTG.find({ active: true }); // Use findOne to get a single document
-//
-//         res.status(200).json(result);  // Ensure the response has acstatus
-//     } catch (error) {
-//         log(`ERROR_FETCHING_ACTIVE_PLANS`);
-//         console.error('Error Fetching Status:', error);
-//         res.status(500).json({ message: 'Server error' });
-//     }
-// }
-//
-// const getAllPlans = async (req, res) => {
-//     try {
-//         const {userId} = req.body;
-//         log(`GET_ALL_PLANS`);
-//         const user_id =new mongoose.Types.ObjectId(userId);
-//         const result1 = await User.findOne({ _id: user_id, role: {$in:['Manager','Admin'] }});
-//         if (!result1){
-//             return res.status(200).json("Not Found");
-//         }
-//         const result = await DetailsTG.find(); // Use findOne to get a single document
-//
-//         return res.status(200).json(result);  // Ensure the response has acstatus
-//     } catch (error) {
-//         log(`ERROR_FETCHING_ALL_PLANS`);
-//         console.error('Error Fetching Status:', error);
-//         return res.status(500).json({ message: 'Server error' });
-//     }
-// }
-//
-// const getAllStudents = async (req, res) => {
-//     try {
-//         log(`FETCHING_ALL_STUDENTS`);
-//         const {userId} = req.body;
-//         const user_id =new mongoose.Types.ObjectId(userId);
-//         const result1 = await User.findOne({ _id: user_id, role: {$in:['Manager','Admin'] }});
-//         if (!result1){
-//             return res.status(200).json("Not Found");
-//         }
-//         const result = await Students.find(); // Use findOne to get a single document
-//
-//         return res.status(200).json(result);  // Ensure the response has acstatus
-//     } catch (error) {
-//         log(`ERROR_FETCHING_ALL_STUDENTS`);
-//         console.error('Error Fetching Status:', error);
-//         return res.status(500).json({ message: 'Server error' });
-//     }
-// };
-//
-// const AddPlan = async (req, res) => {
-//     try {
-//         log(`ADDING_NEW_PLAN`);
-//         const plan = new DetailsTG(req.body);
-//         await plan.save();
-//         res.status(201).json(plan);
-//     } catch (error) {
-//         log(`ERROR_ADDING_NEW_PLAN`);
-//         res.status(400).json({ error: error.message });
-//     }
-// };
-//
-// const UpdatePlan = async (req, res) => {
-//     try {log(`UPDATING_PLAN_${req.params.id}`);
-//         const updatedPlan = await DetailsTG.findByIdAndUpdate(req.params.id, req.body, { new: true });
-//         if (!updatedPlan) return res.status(404).json({ error: 'Plan not found' });
-//         res.json(updatedPlan);
-//     } catch (error) {
-//         console.log(error)
-//         log(`ERROR_UPDATING_PLAN`);
-//         res.status(400).json({ error: error.message });
-//     }
-// };
-//
-// const ChangePlanStatus =async (req, res) => {
-//     try {
-//         log(`CHANGING_PLAN_STATUS_${req.params.id}`);
-//         const plan = await DetailsTG.findById(req.params.id);
-//         if (!plan) return res.status(404).json({ error: 'Plan not found' });
-//         plan.active = !plan.active;
-//         await plan.save();
-//         res.json(plan);
-//     } catch (error) {
-//         log(`ERROR_CHANGING_PLAN_STATUS`);
-//         res.status(400).json({ error: error.message });
-//     }
-// };
-//
-// module.exports = {ChangePlanStatus,UpdatePlan,AddPlan,getAllStudents,getAllPlans,getActivePlans,getActiveDetailsAcademy };
-
-
 const DetailsTG = require('../models/DetailsAcademy');
 const Status = require('../models/Status');
 const CryptoJS = require('crypto-js');
@@ -300,6 +176,30 @@ const changeSportStatus = async (req, res) => {
     }
 };
 
+// Edit sport
+const editSport = async (req, res) => {
+    try {
+        log(`EDITING_SPORT_${req.params.id}`);
+        const { id } = req.params;
+        const { name } = req.body;
+
+        const updatedSport = await Sport.findByIdAndUpdate(
+            id,
+            { name },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedSport) {
+            return res.status(404).json({ error: 'Sport not found' });
+        }
+
+        res.status(200).json(updatedSport);
+    } catch (error) {
+        log(`ERROR_EDITING_SPORT_${req.params.id}`);
+        res.status(400).json({ error: error.message });
+    }
+};
+
 // Add a new institute
 const addInstitute = async (req, res) => {
     try {
@@ -358,6 +258,7 @@ const changeInstituteStatus = async (req, res) => {
     }
 };
 
+// Edit institute
 const editInstitute = async (req, res) => {
     try {
         log(`EDITING_INSTITUTE_${req.params.id}`);
@@ -399,35 +300,19 @@ const deleteInstitute = async (req, res) => {
     }
 };
 
-const editSport = async (req, res) => {
-    try {
-        log(`EDITING_SPORT_${req.params.id}`);
-        const { id } = req.params;
-        const { name } = req.body;
-
-        const updatedSport = await Sport.findByIdAndUpdate(
-            id,
-            { name },
-            { new: true, runValidators: true }
-        );
-
-        if (!updatedSport) {
-            return res.status(404).json({ error: 'Sport not found' });
-        }
-
-        res.status(200).json(updatedSport);
-    } catch (error) {
-        log(`ERROR_EDITING_SPORT_${req.params.id}`);
-        res.status(400).json({ error: error.message });
-    }
-};
-
 // Add a new batch
 const addBatch = async (req, res) => {
     try {
         log(`ADDING_NEW_BATCH`);
-        const { name, start_time, end_time } = req.body;
-        const batch = new Batch({ name, start_time, end_time });
+        const { name, start_time, end_time, sport_id } = req.body;
+
+        // Validate sport_id
+        const sport = await Sport.findById(sport_id);
+        if (!sport) {
+            return res.status(404).json({ error: 'Sport not found' });
+        }
+
+        const batch = new Batch({ name, start_time, end_time, sport_id });
         await batch.save();
         res.status(201).json(batch);
     } catch (error) {
@@ -436,16 +321,30 @@ const addBatch = async (req, res) => {
     }
 };
 
-// Get all batches
+// Get all batches (filtered by sport_id if provided)
 const getAllBatches = async (req, res) => {
     try {
         log(`FETCHING_ALL_BATCHES`);
-        const { userId } = req.body;
+        const { userId, sport_id } = req.body;
+
         const result1 = await User.findById(userId);
         if (!result1) {
             return res.status(200).json("Not Found");
         }
-        const batches = await Batch.find();
+
+        const query = {};
+        if (sport_id) {
+            if (!mongoose.Types.ObjectId.isValid(sport_id)) {
+                return res.status(400).json({ error: 'Invalid sport ID' });
+            }
+            const sport = await Sport.findById(sport_id);
+            if (!sport) {
+                return res.status(404).json({ error: 'Sport not found' });
+            }
+            query.sport_id = sport_id;
+        }
+
+        const batches = await Batch.find(query).populate('sport_id', 'name');
         res.status(200).json(batches);
     } catch (error) {
         log(`ERROR_FETCHING_ALL_BATCHES`);
@@ -453,11 +352,25 @@ const getAllBatches = async (req, res) => {
     }
 };
 
-// Get active batches
+// Get active batches (filtered by sport_id if provided)
 const getActiveBatches = async (req, res) => {
     try {
         log(`FETCHING_ACTIVE_BATCHES`);
-        const batches = await Batch.find({ active: true });
+        const { sport_id } = req.body;
+
+        const query = { active: true };
+        if (sport_id) {
+            if (!mongoose.Types.ObjectId.isValid(sport_id)) {
+                return res.status(400).json({ error: 'Invalid sport ID' });
+            }
+            const sport = await Sport.findById(sport_id);
+            if (!sport) {
+                return res.status(404).json({ error: 'Sport not found' });
+            }
+            query.sport_id = sport_id;
+        }
+
+        const batches = await Batch.find(query).populate('sport_id', 'name');
         res.status(200).json(batches);
     } catch (error) {
         log(`ERROR_FETCHING_ACTIVE_BATCHES`);
@@ -470,11 +383,18 @@ const editBatch = async (req, res) => {
     try {
         log(`EDITING_BATCH_${req.params.id}`);
         const { id } = req.params;
-        const { name, start_time, end_time } = req.body;
+        const { name, start_time, end_time, sport_id } = req.body;
+
+        if (sport_id) {
+            const sport = await Sport.findById(sport_id);
+            if (!sport) {
+                return res.status(404).json({ error: 'Sport not found' });
+            }
+        }
 
         const updatedBatch = await Batch.findByIdAndUpdate(
             id,
-            { name, start_time, end_time },
+            { name, start_time, end_time, sport_id },
             { new: true, runValidators: true }
         );
 
@@ -522,6 +442,29 @@ const deleteBatch = async (req, res) => {
     }
 };
 
+// New controller: Get batches by sport
+const getBatchesBySport = async (req, res) => {
+    try {
+        log(`FETCHING_BATCHES_BY_SPORT_${req.params.sport_id}`);
+        const { sport_id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(sport_id)) {
+            return res.status(400).json({ error: 'Invalid sport ID' });
+        }
+
+        const sport = await Sport.findById(sport_id);
+        if (!sport) {
+            return res.status(404).json({ error: 'Sport not found' });
+        }
+
+        const batches = await Batch.find({ sport_id, active: true }).select('name start_time end_time');
+        res.status(200).json(batches);
+    } catch (error) {
+        log(`ERROR_FETCHING_BATCHES_BY_SPORT_${req.params.sport_id}`);
+        res.status(500).json({ message: 'Server error' });
+    }
+};
+
 module.exports = {
     ChangePlanStatus,
     UpdatePlan,
@@ -534,12 +477,12 @@ module.exports = {
     getAllSports,
     getActiveSports,
     changeSportStatus,
+    editSport,
     addInstitute,
     getAllInstitutes,
     getActiveInstitutes,
     changeInstituteStatus,
     editInstitute,
-    editSport,
     deleteInstitute,
     addBatch,
     getAllBatches,
@@ -547,5 +490,5 @@ module.exports = {
     editBatch,
     changeBatchStatus,
     deleteBatch,
-
+    getBatchesBySport // New controller
 };

@@ -1,3 +1,4 @@
+
 const express = require('express');
 const {
     getActiveDetailsAcademy,
@@ -16,13 +17,15 @@ const {
     getActiveInstitutes,
     changeInstituteStatus,
     editInstitute,
-    editSport, deleteInstitute,
+    editSport,
+    deleteInstitute,
     addBatch,
     getAllBatches,
     getActiveBatches,
     editBatch,
     changeBatchStatus,
     deleteBatch,
+    getBatchesBySport // New controller
 } = require('../controllers/AcademyController');
 const mongoose = require('mongoose');
 const router = express.Router();
@@ -37,7 +40,7 @@ const User = require('../models/user');
 const Batch = require('../models/Batch');
 const moment = require('moment');
 
-// Existing routes with controllers
+// Existing routes
 router.post('/active-plans', getActivePlans);
 router.post('/students', getAllStudents);
 router.post('/all-plans', getAllPlans);
@@ -57,9 +60,8 @@ router.post('/all-institutes', getAllInstitutes);
 router.post('/active-institutes', getActiveInstitutes);
 router.put('/update-institute/:id', editInstitute);
 router.patch('/update-institute-status/:id/toggle', changeInstituteStatus);
-router.post('/institute/:id', deleteInstitute);
+router.delete('/institute/:id', deleteInstitute);
 
-// Batch routes
 router.post('/add-batch', addBatch);
 router.post('/all-batches', getAllBatches);
 router.post('/active-batches', getActiveBatches);
@@ -67,10 +69,26 @@ router.put('/update-batch/:id', editBatch);
 router.patch('/update-batch-status/:id/toggle', changeBatchStatus);
 router.delete('/batch/:id', deleteBatch);
 
+// New route: Get batches by sport
+router.get('/batches-by-sport/:sport_id', getBatchesBySport);
+
 // Add new trainee
 router.post('/trainee', async (req, res) => {
     try {
         log(`ADD_NEW_TRAINEE`);
+        const { sport_id, batch_id } = req.body;
+
+        // Validate sport and batch relationship
+        if (sport_id && batch_id) {
+            const batch = await Batch.findById(batch_id);
+            if (!batch) {
+                return res.status(404).json({ error: 'Batch not found' });
+            }
+            if (batch.sport_id.toString() !== sport_id) {
+                return res.status(400).json({ error: 'Selected batch does not belong to the selected sport' });
+            }
+        }
+
         const trainee = new Academy(req.body);
         await trainee.save();
         res.status(201).send(trainee);
@@ -84,6 +102,19 @@ router.post('/trainee', async (req, res) => {
 router.put('/trainee/:id', async (req, res) => {
     try {
         log(`UPDATING_TRAINEE_${req.params.id}`);
+        const { sport_id, batch_id } = req.body;
+
+        // Validate sport and batch relationship
+        if (sport_id && batch_id) {
+            const batch = await Batch.findById(batch_id);
+            if (!batch) {
+                return res.status(404).json({ error: 'Batch not found' });
+            }
+            if (batch.sport_id.toString() !== sport_id) {
+                return res.status(400).json({ error: 'Selected batch does not belong to the selected sport' });
+            }
+        }
+
         const trainee = await Academy.findByIdAndUpdate(req.params.id, req.body, { new: true });
         res.send(trainee);
     } catch (error) {
@@ -92,7 +123,7 @@ router.put('/trainee/:id', async (req, res) => {
     }
 });
 
-// Toggle active status
+// Toggle trainee active status
 router.patch('/trainee/:id/toggle', async (req, res) => {
     try {
         log(`UPDATE_TRAINEE_STATUS_${req.params.id}`);
@@ -124,7 +155,7 @@ router.post('/trainee/:id/generate-id', async (req, res) => {
 router.get('/trainees', async (req, res) => {
     try {
         log(`FETCH_ALL_TRAINEES`);
-        const trainees = await Academy.find({delete:false}).sort({roll_no:1});
+        const trainees = await Academy.find({ delete: false }).sort({ roll_no: 1 });
         res.send(trainees);
     } catch (error) {
         log(`ERROR_FETCHING_TRAINEES_ALL`);
@@ -134,7 +165,7 @@ router.get('/trainees', async (req, res) => {
 
 router.post('/id-card-given', async (req, res) => {
     try {
-        const {userid, id} = req.body;
+        const { userid, id } = req.body;
         log(`MARK_ID_CARD_GIVEN_${id}`);
         const result1 = await User.findById(userid);
         if (!result1) {
@@ -153,7 +184,7 @@ router.post('/id-card-given', async (req, res) => {
 
 router.post('/id-card-generated', async (req, res) => {
     try {
-        const {userid, id} = req.body;
+        const { userid, id } = req.body;
         log(`MARK_ID_CARD_GENERATED_${id}`);
         const result1 = await User.findById(userid);
         if (!result1) {
@@ -169,7 +200,7 @@ router.post('/id-card-generated', async (req, res) => {
     }
 });
 
-// routes/AcademyRoute.js
+// Renew trainee
 router.post('/renewal', async (req, res) => {
     try {
         const authHeader = req.headers.authorization;
@@ -193,7 +224,7 @@ router.post('/renewal', async (req, res) => {
             payment_method,
             institute_id,
             sport_id,
-            batch_id, // Added batch_id
+            batch_id,
             start_date,
             expiry_date
         } = req.body;
@@ -247,6 +278,12 @@ router.post('/renewal', async (req, res) => {
             return res.status(404).send('Batch not found');
         }
 
+        // Validate that the batch belongs to the selected sport
+        if (batch.sport_id.toString() !== sport_id) {
+            log(`INVALID_BATCH_FOR_SPORT_RENEWAL_${trainee_id}`);
+            return res.status(400).send('Selected batch does not belong to the selected sport');
+        }
+
         const user = await User.findById(userId);
         if (!user) {
             log(`USER_NOT_FOUND_${userId}`);
@@ -270,7 +307,7 @@ router.post('/renewal', async (req, res) => {
         trainee.plan_id = plan_id;
         trainee.institute_id = institute_id;
         trainee.sport_id = sport_id;
-        trainee.batch_id = batch_id; // Added batch_id
+        trainee.batch_id = batch_id;
         trainee.from = renewalStartDate.toDate();
         trainee.to = renewalExpiryDate.toDate();
         trainee.amount = Number(amount);
