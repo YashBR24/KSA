@@ -46,6 +46,11 @@ const AcademyManagement = () => {
     sport_id: "", // Added sport_id field
     active: true,
   });
+  const [selectedSport, setSelectedSport] = useState(""); // State for sport filter
+  const filteredBatches = selectedSport
+  ? batches.filter((batch) => batch.sport_id?._id === selectedSport)
+  : batches;
+
 
   const toggleSection = (section) => {
     if (section === "plans") setShowPlans(!showPlans);
@@ -260,7 +265,7 @@ const AcademyManagement = () => {
       name: batch.name,
       start_time: batch.start_time,
       end_time: batch.end_time,
-      sport_id: batch.sport_id ? batch.sport_id._id : "", // Ensure sport_id is set
+      sport_id: batch.sport_id ? batch.sport_id._id : "",
       active: batch.active,
     });
     setShowBatchPopup(true);
@@ -290,20 +295,58 @@ const AcademyManagement = () => {
     setShowBatchPopup(true);
   };
 
+  const formatTime = (timeStr) => {
+    const [hour, minute] = timeStr.split(':');
+    const date = new Date();
+    date.setHours(parseInt(hour));
+    date.setMinutes(parseInt(minute));
+    return date.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === "Escape") {
+        setShowPlanPopup(false);
+        setShowSportPopup(false);
+        setShowInstitutePopup(false);
+        setShowBatchPopup(false);
+      }
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, []);
+  
+
   return (
     <div className="min-h-screen p-0 md:p-4">
       <div className="max-w-7xl mx-auto space-y-3 sm:space-y-4 md:space-y-6">
         {/* Navigation Buttons */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
-          <button
-            onClick={() => toggleSection("plans")}
+        
+        <button
+            onClick={() => toggleSection("trainee")}
             className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg shadow-sm transition-all duration-200 text-sm sm:text-base ${
-              showPlans ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-400"
+              showTrainee ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-400"
+            }`}
+          >
+            <Users className="w-4 sm:w-4.5 md:w-5 h-4 sm:h-4.5 md:h-5" />
+            {showTrainee ? "Hide Students" : "Show Students"}
+          </button>
+        
+        <button
+            onClick={() => toggleSection("batches")}
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg shadow-sm transition-all duration-200 text-sm sm:text-base ${
+              showBatches ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-400"
             }`}
           >
             <ClipboardList className="w-4 sm:w-4.5 md:w-5 h-4 sm:h-4.5 md:h-5" />
-            {showPlans ? "Hide Plans" : "Show Plans"}
+            {showBatches ? "Hide Batches" : "Show Batches"}
           </button>
+          
           <button
             onClick={() => toggleSection("sports")}
             className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg shadow-sm transition-all duration-200 text-sm sm:text-base ${
@@ -313,6 +356,17 @@ const AcademyManagement = () => {
             <ClipboardList className="w-4 sm:w-4.5 md:w-5 h-4 sm:h-4.5 md:h-5" />
             {showSports ? "Hide Sports" : "Show Sports"}
           </button>
+
+          <button
+            onClick={() => toggleSection("plans")}
+            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg shadow-sm transition-all duration-200 text-sm sm:text-base ${
+              showPlans ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-400"
+            }`}
+          >
+            <ClipboardList className="w-4 sm:w-4.5 md:w-5 h-4 sm:h-4.5 md:h-5" />
+            {showPlans ? "Hide Plans" : "Show Plans"}
+          </button>
+          
           <button
             onClick={() => toggleSection("institutes")}
             className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg shadow-sm transition-all duration-200 text-sm sm:text-base ${
@@ -322,24 +376,8 @@ const AcademyManagement = () => {
             <ClipboardList className="w-4 sm:w-4.5 md:w-5 h-4 sm:h-4.5 md:h-5" />
             {showInstitutes ? "Hide Institutes" : "Show Institutes"}
           </button>
-          <button
-            onClick={() => toggleSection("batches")}
-            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg shadow-sm transition-all duration-200 text-sm sm:text-base ${
-              showBatches ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-400"
-            }`}
-          >
-            <ClipboardList className="w-4 sm:w-4.5 md:w-5 h-4 sm:h-4.5 md:h-5" />
-            {showBatches ? "Hide Batches" : "Show Batches"}
-          </button>
-          <button
-            onClick={() => toggleSection("trainee")}
-            className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg shadow-sm transition-all duration-200 text-sm sm:text-base ${
-              showTrainee ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-400"
-            }`}
-          >
-            <Users className="w-4 sm:w-4.5 md:w-5 h-4 sm:h-4.5 md:h-5" />
-            {showTrainee ? "Hide Trainees" : "Show Trainees"}
-          </button>
+          
+          
         </div>
 
         {/* Plans Section */}
@@ -530,74 +568,100 @@ const AcademyManagement = () => {
 
         {/* Batches Section */}
         {showBatches && (
-          <div className="space-y-3 sm:space-y-4 md:space-y-6">
-            <h2 className="text-xl font-semibold">Batches</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
-              {batches.map((batch) => (
-                <div
-                  key={batch._id}
-                  className="bg-white rounded-xl shadow-sm p-3 sm:p-4 md:p-6 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex justify-between items-start mb-3 sm:mb-4">
-                    <h3 className="text-lg sm:text-xl font-semibold text-gray-900">{batch.name}</h3>
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        batch.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {batch.active ? "Active" : "Inactive"}
-                    </span>
-                  </div>
-                  <div className="space-y-2 mb-4 sm:mb-6">
-                    <p className="text-sm sm:text-base text-gray-600">
-                      <span className="font-medium">Sport:</span>{" "}
-                      {batch.sport_id ? batch.sport_id.name : "N/A"}
-                    </p>
-                    <p className="text-sm sm:text-base text-gray-600">
-                      <span className="font-medium">Timing:</span> {batch.start_time} - {batch.end_time}
-                    </p>
-                  </div>
-                  <div className="flex gap-2 sm:gap-3">
-                    <button
-                      onClick={() => toggleActive(batch._id, "batch")}
-                      className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-sm sm:text-base ${
-                        batch.active
-                          ? "bg-red-50 text-red-600 hover:bg-red-100"
-                          : "bg-green-50 text-green-600 hover:bg-green-100"
-                      } transition-colors`}
-                    >
-                      {batch.active ? (
-                        <XCircle className="w-4 sm:w-4.5 md:w-5 h-4 sm:h-4.5 md:h-5" />
-                      ) : (
-                        <CheckCircle className="w-4 sm:w-4.5 md:w-5 h-4 sm:h-4.5 md:h-5" />
-                      )}
-                      {batch.active ? "Deactivate" : "Activate"}
-                    </button>
-                    <button
-                      onClick={() => openEditBatchPopup(batch)}
-                      className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition-colors text-sm sm:text-base"
-                    >
-                      <Edit className="w-4 sm:w-4.5 md:w-5 h-4 sm:h-4.5 md:h-5" />
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => deleteBatch(batch._id)}
-                      className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm sm:text-base"
-                    >
-                      <Trash2 className="w-4 sm:w-4.5 md:w-5 h-4 sm:h-4.5 md:h-5" />
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
+  <div className="space-y-3 sm:space-y-4 md:space-y-6">
+    <div className="flex justify-between items-center">
+      <h2 className="text-xl font-semibold">Batches</h2>
+      <div className="flex items-center gap-3">
+        <label className="text-xl font-medium text-gray-700">Filter by Sport:</label>
+        <select
+          value={selectedSport}
+          onChange={(e) => setSelectedSport(e.target.value)}
+          className="p-2 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm sm:text-base"
+        >
+          <option value="">All Sports</option>
+          {sports.map((sport) => (
+            <option key={sport._id} value={sport._id}>
+              {sport.name}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+      {filteredBatches.length > 0 ? (
+        filteredBatches.map((batch) => (
+          <div
+            key={batch._id}
+            className="bg-white rounded-xl shadow-sm p-3 sm:p-4 md:p-6 hover:shadow-md transition-shadow"
+          >
+            <div className="flex justify-between items-start mb-3 sm:mb-4">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900">{batch.name}</h3>
+              <span
+                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                  batch.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                }`}
+              >
+                {batch.active ? "Active" : "Inactive"}
+              </span>
+            </div>
+            <div className="space-y-2 mb-4 sm:mb-6">
+              <p className="text-sm sm:text-base text-gray-600">
+                <span className="font-medium">Sport:</span>{" "}
+                {batch.sport_id ? batch.sport_id.name : "N/A"}
+              </p>
+              <p className="text-sm sm:text-base text-gray-600">
+                <span className="font-medium">Timing:</span>{" "}
+                {formatTime(batch.start_time)} - {formatTime(batch.end_time)}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2 sm:gap-3">
+              <button
+                onClick={() => toggleActive(batch._id, "batch")}
+                className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg text-sm sm:text-base ${
+                  batch.active
+                    ? "bg-red-50 text-red-600 hover:bg-red-100"
+                    : "bg-green-50 text-green-600 hover:bg-green-100"
+                } transition-colors`}
+              >
+                {batch.active ? (
+                  <XCircle className="w-4 sm:w-4.5 md:w-5 h-4 sm:h-4.5 md:h-5" />
+                ) : (
+                  <CheckCircle className="w-4 sm:w-4.5 md:w-5 h-4 sm:h-4.5 md:h-5" />
+                )}
+                {batch.active ? "Deactivate" : "Activate"}
+              </button>
+              <button
+                onClick={() => openEditBatchPopup(batch)}
+                className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition-colors text-sm sm:text-base"
+              >
+                <Edit className="w-4 sm:w-4.5 md:w-5 h-4 sm:h-4.5 md:h-5" />
+                Edit
+              </button>
+              <button
+                onClick={() => deleteBatch(batch._id)}
+                className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm sm:text-base"
+              >
+                <Trash2 className="w-4 sm:w-4.5 md:w-5 h-4 sm:h-4.5 md:h-5" />
+                Delete
+              </button>
             </div>
           </div>
-        )}
+        ))
+      ) : (
+        <p className="text-sm text-gray-600 col-span-full">No batches found for the selected sport.</p>
+      )}
+    </div>
+  </div>
+)}
 
         {/* Add/Edit Plan Modal */}
         {showPlanPopup && (
-          <div className="fixed z-50 inset-0 bg-black bg-opacity-10 flex items-center justify-center p-2 sm:p-3 md:p-4">
-            <div className="bg-white rounded-xl shadow-lg max-w-md w-full mx-2 p-3 sm:p-4 md:p-6">
+          <div className="fixed z-50 inset-0 bg-black bg-opacity-10 flex items-center justify-center p-2 sm:p-3 md:p-4"
+          onClick={() => setShowPlanPopup(false)}
+          >
+            <div className="bg-white rounded-xl shadow-lg max-w-md w-full mx-2 p-3 sm:p-4 md:p-6"
+            onClick={(e) => e.stopPropagation()}
+            >
               <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4 sm:mb-6">
                 {editingPlan ? "Edit Plan" : "Add New Plan"}
               </h2>
@@ -670,8 +734,12 @@ const AcademyManagement = () => {
 
         {/* Add/Edit Sport Modal */}
         {showSportPopup && (
-          <div className="fixed z-50 inset-0 bg-black bg-opacity-10 flex items-center justify-center p-2 sm:p-3 md:p-4">
-            <div className="bg-white rounded-xl shadow-lg max-w-md w-full mx-2 p-3 sm:p-4 md:p-6">
+          <div className="fixed z-50 inset-0 bg-black bg-opacity-10 flex items-center justify-center p-2 sm:p-3 md:p-4"
+          onClick={() => showSportPopup(false)}
+          >
+            <div className="bg-white rounded-xl shadow-lg max-w-md w-full mx-2 p-3 sm:p-4 md:p-6"
+            onClick={(e) => e.showSportPopup()}
+            >
               <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4 sm:mb-6">
                 {editingSport ? "Edit Sport" : "Add New Sport"}
               </h2>
@@ -722,8 +790,12 @@ const AcademyManagement = () => {
 
         {/* Add/Edit Institute Modal */}
         {showInstitutePopup && (
-          <div className="fixed z-50 inset-0 bg-black bg-opacity-10 flex items-center justify-center p-2 sm:p-3 md:p-4">
-            <div className="bg-white rounded-xl shadow-lg max-w-md w-full mx-2 p-3 sm:p-4 md:p-6">
+          <div className="fixed z-50 inset-0 bg-black bg-opacity-10 flex items-center justify-center p-2 sm:p-3 md:p-4"
+          onClick={() => showInstitutePopup(false)}
+          >
+            <div className="bg-white rounded-xl shadow-lg max-w-md w-full mx-2 p-3 sm:p-4 md:p-6"
+            onClick={(e) => e.showInstitutePopup()}
+            >
               <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4 sm:mb-6">
                 {editingInstitute ? "Edit Institute" : "Add New Institute"}
               </h2>
@@ -774,8 +846,12 @@ const AcademyManagement = () => {
 
         {/* Add/Edit Batch Modal */}
         {showBatchPopup && (
-          <div className="fixed z-50 inset-0 bg-black bg-opacity-10 flex items-center justify-center p-2 sm:p-3 md:p-4">
-            <div className="bg-white rounded-xl shadow-lg max-w-md w-full mx-2 p-3 sm:p-4 md:p-6">
+          <div className="fixed z-50 inset-0 bg-black bg-opacity-10 flex items-center justify-center p-2 sm:p-3 md:p-4"
+          onClick={() => showBatchPopup(false)}
+          >
+            <div className="bg-white rounded-xl shadow-lg max-w-md w-full mx-2 p-3 sm:p-4 md:p-6"
+            onClick={(e) => e.showBatchPopup()}
+            >
               <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4 sm:mb-6">
                 {editingBatch ? "Edit Batch" : "Add New Batch"}
               </h2>
@@ -862,6 +938,7 @@ const AcademyManagement = () => {
             </div>
           </div>
         )}
+        
 
         {/* Trainee Section */}
         {showTrainee && <TraineeManagement />}

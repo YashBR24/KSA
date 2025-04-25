@@ -751,11 +751,8 @@ useEffect(() => {
                         >
                             <option value="" disabled>Select Payment Method</option>
                             <option value="CASH">Cash</option>
-                            <option value="UPI">UPI</option>
+                            <option value="UPI">Online</option>
                             <option value="CARD">Card</option>
-                            <option value="CHEQUE">Cheque</option>
-                            <option value="NET BANKING">Net Banking</option>
-                            <option value="DEMAND DRAFT">Demand Draft</option>
                         </select>
 
                         <label className="block text-sm font-medium text-gray-700">Amount</label>
@@ -941,12 +938,9 @@ useEffect(() => {
                                         className="border p-2 w-full border-gray-400 rounded mt-1"
                                     >
                                         <option value="">Select Payment Method</option>
-                                        <option value="CASH">CASH</option>
-                                        <option value="UPI">UPI</option>
-                                        <option value="CARD">CARD</option>
-                                        <option value="NET BANKING">NET BANKING</option>
-                                        <option value="CHEQUE">CHEQUE</option>
-                                        <option value="DEMAND DRAFT">DEMAND DRAFT</option>
+                                        <option value="CASH">Cash</option>
+                                        <option value="UPI">Online</option>
+                                        <option value="CARD">Card</option>
                                     </select>
                                 )}
                             </div>
@@ -1027,12 +1021,9 @@ useEffect(() => {
                                         className="border p-2 w-full border-gray-400 rounded mt-1"
                                     >
                                         <option value="">Select Advance Payment Mode</option>
-                                        <option value="CASH">CASH</option>
-                                        <option value="UPI">UPI</option>
-                                        <option value="CARD">CARD</option>
-                                        <option value="NET BANKING">NET BANKING</option>
-                                        <option value="CHEQUE">CHEQUE</option>
-                                        <option value="DEMAND DRAFT">DEMAND DRAFT</option>
+                                        <option value="CASH">Cash</option>
+                                        <option value="UPI">Online</option>
+                                        <option value="CARD">Card</option>
                                     </select>
                                 )}
                             </div>

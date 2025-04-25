@@ -72,158 +72,6 @@ const calculateBalanceFromTransactions = async (instituteId) => {
     return balance;
 };
 
-// Helper function to generate PDF
-const generateTraineePDF = (traineeData, photoPath, traineeSignaturePath, fatherSignaturePath) => {
-    return new Promise((resolve, reject) => {
-        const doc = new PDFDocument({
-            size: 'A4',
-            margin: 30,
-            bufferPages: true,
-            autoFirstPage: true
-        });
-        const pdfPath = path.join(__dirname, `../Uploads/trainee_${traineeData.phone}.pdf`);
-        const stream = fs.createWriteStream(pdfPath);
-        doc.pipe(stream);
-
-        const pageHeight = 841.89 - 60;
-        const colors = {
-            primary: '#1565C0',
-            secondary: '#2196F3',
-            text: '#212121',
-            textSecondary: '#5D6D7E'
-        };
-
-        doc.rect(0, 0, doc.page.width, 60).fill(colors.primary);
-        doc.fontSize(16)
-            .fillColor('#FFFFFF')
-            .font('Helvetica-Bold')
-            .text('Student Registration Form', 40, 15)
-            .fontSize(8)
-            .text(`Generated on: ${moment().format('DD/MM/YYYY HH:mm')}`, 40, 35);
-
-        doc.fontSize(9)
-            .fillColor('#FFFFFF')
-            .text(`Institute: ${traineeData.institute_name || 'N/A'}`, doc.page.width - 180, 15, { width: 150, align: 'right' })
-            .text(`Roll No: ${traineeData.roll_no}`, doc.page.width - 180, 30, { width: 150, align: 'right' });
-
-        let y = 70;
-
-        const createSectionHeader = (title, yPos) => {
-            doc.rect(30, yPos, doc.page.width - 60, 20).fill(colors.secondary);
-            doc.fontSize(11)
-                .fillColor('#FFFFFF')
-                .font('Helvetica-Bold')
-                .text(title, 40, yPos + 5);
-            return yPos + 20;
-        };
-
-        y = createSectionHeader('Personal Information', y);
-        doc.rect(30, y, doc.page.width - 60, 110).fill('#FFFFFF').stroke('#E0E0E0');
-        y += 8;
-
-        const leftColumn = 40;
-        const rightColumn = doc.page.width / 2;
-        const lineHeight = 18;
-
-        const addField = (label, value, x, currentY) => {
-            doc.fontSize(8)
-                .font('Helvetica-Bold')
-                .fillColor(colors.text)
-                .text(label + ':', x, currentY);
-            doc.font('Helvetica')
-                .fillColor(colors.textSecondary)
-                .text(value || 'N/A', x + 70, currentY, { width: 140 });
-        };
-
-        addField('Name', traineeData.name || 'N/A', leftColumn, y);
-        addField("Father's Name", traineeData.father || 'N/A', leftColumn, y + lineHeight);
-        addField('Date of Birth', moment(traineeData.dob).format('DD/MM/YYYY'), leftColumn, y + lineHeight * 2);
-        addField('Phone', traineeData.phone || 'N/A', leftColumn, y + lineHeight * 3);
-        addField('Occupation', traineeData.occupation || 'N/A', leftColumn, y + lineHeight * 4);
-
-        addField('Sport', traineeData.sport_name || 'N/A', rightColumn, y);
-        addField('Plan', traineeData.session || 'N/A', rightColumn, y + lineHeight);
-        addField('Batch', traineeData.batch_name || 'N/A', rightColumn, y + lineHeight * 2);
-        addField('Start Date', moment(traineeData.from).format('DD/MM/YYYY'), rightColumn, y + lineHeight * 3);
-        addField('End Date', moment(traineeData.to).format('DD/MM/YYYY'), rightColumn, y + lineHeight * 4);
-
-        y += 100;
-
-        y = createSectionHeader('Contact Details', y);
-        doc.rect(30, y, doc.page.width - 60, 40).fill('#FFFFFF').stroke('#E0E0E0');
-        y += 8;
-
-        doc.fontSize(8)
-            .font('Helvetica-Bold')
-            .fillColor(colors.text)
-            .text('Address:', 40, y);
-        doc.font('Helvetica')
-            .fillColor(colors.textSecondary)
-            .text(traineeData.address || 'N/A', 40, y + 12, { width: doc.page.width - 80 });
-
-        y += 45;
-
-        y = createSectionHeader('Photos & Signatures', y);
-        const photoSectionHeight = 80;
-        doc.rect(30, y, doc.page.width - 60, photoSectionHeight).fill('#FFFFFF').stroke('#E0E0E0');
-
-        y += 5;
-
-        const imageWidth = 90;
-        const imageHeight = 50;
-        const availableSpace = doc.page.width - 60 - 40;
-        const spacing = (availableSpace - (imageWidth * 3)) / 2;
-
-        const photoX = 40;
-        const traineeSignatureX = photoX + imageWidth + spacing;
-        const fatherSignatureX = traineeSignatureX + imageWidth + spacing;
-
-        const displayImage = (imagePath, x, label) => {
-            if (imagePath && fs.existsSync(path.join(__dirname, '../', imagePath))) {
-                doc.image(path.join(__dirname, '../', imagePath), x, y, {
-                    fit: [imageWidth, imageHeight],
-                    align: 'center'
-                });
-                doc.rect(x, y, imageWidth, imageHeight).lineWidth(0.25).stroke('#CCCCCC');
-                doc.fontSize(7)
-                    .fillColor(colors.text)
-                    .font('Helvetica-Bold')
-                    .text(label, x, y + imageHeight + 3, { width: imageWidth, align: 'center' });
-            } else {
-                doc.rect(x, y, imageWidth, imageHeight)
-                    .lineWidth(0.25)
-                    .stroke('#CCCCCC')
-                    .fillColor('#F5F5F5')
-                    .fill();
-                doc.fontSize(7)
-                    .fillColor(colors.textSecondary)
-                    .text('No Image', x, y + (imageHeight/2) - 3, { width: imageWidth, align: 'center' });
-                doc.fontSize(7)
-                    .fillColor(colors.text)
-                    .font('Helvetica-Bold')
-                    .text(label, x, y + imageHeight + 3, { width: imageWidth, align: 'center' });
-            }
-        };
-
-        displayImage(photoPath, photoX, 'Trainee Photo');
-        displayImage(traineeSignaturePath, traineeSignatureX, 'Trainee Signature');
-        displayImage(fatherSignaturePath, fatherSignatureX, "Father's Signature");
-
-        const footerY = pageHeight;
-        doc.rect(0, footerY, doc.page.width, 30).fill(colors.primary);
-        doc.fontSize(8)
-            .fillColor('#FFFFFF')
-            .text('Powered by xAI Academy Management System', 0, footerY + 10, {
-                align: 'center',
-                width: doc.page.width
-            });
-
-        doc.end();
-        stream.on('finish', () => resolve(pdfPath));
-        stream.on('error', reject);
-    });
-};
-
 // Routes from controllers
 router.post('/all-plans', (req, res, next) => {
     log(`ROUTING_ALL_PLANS`);
@@ -258,7 +106,6 @@ router.get("/institutes", (req, res, next) => {
     getAllInstitutes(req, res, next);
 });
 
-// Add new trainee
 router.post("/add-new-trainee", upload.fields([
     { name: "photo", maxCount: 1 },
     { name: "traineeSignature", maxCount: 1 },
@@ -278,7 +125,7 @@ router.post("/add-new-trainee", upload.fields([
         }
 
         const {
-            name, payment_method, father, dob, address, phone,
+            name, payment_method, payment_status, initial_payment, father, dob, address, phone,
             plan_id, sport_id, institute_id, batch_id, amount, occupation,
             current_class, name_of_school, dateAndPlace, start_date, expiry_date
         } = req.body;
@@ -291,7 +138,7 @@ router.post("/add-new-trainee", upload.fields([
         }
 
         const rollno = await Academy.countDocuments();
-        const roll_no = rollno + 20250001;
+        const roll_no ="KSA"+(rollno + 1);
 
         const planDetails = await DetailsAcademy.findById(plan_id);
         if (!planDetails) {
@@ -348,6 +195,38 @@ router.post("/add-new-trainee", upload.fields([
             fs.renameSync(originalPath, path.join(uploadDir, fatherSignatureFilename));
         }
 
+        // Validate payment status and amounts
+        const totalAmount = Number(amount) || 0;
+        const initialPayment = Number(initial_payment) || 0;
+        let pendingAmount = 0;
+        let validatedPaymentStatus = payment_status?.toUpperCase() || 'PENDING';
+
+        if (!['PAID', 'PARTIAL', 'PENDING'].includes(validatedPaymentStatus)) {
+            log(`INVALID_PAYMENT_STATUS_${validatedPaymentStatus}`);
+            return res.status(400).send("Invalid payment status");
+        }
+
+        if (validatedPaymentStatus === 'PAID' && initialPayment !== totalAmount) {
+            log(`INVALID_PAID_AMOUNT_${initialPayment}_${totalAmount}`);
+            return res.status(400).send("Initial payment must equal total amount for PAID status");
+        }
+
+        if (validatedPaymentStatus === 'PARTIAL') {
+            if (initialPayment >= totalAmount || initialPayment <= 0) {
+                log(`INVALID_PARTIAL_AMOUNT_${initialPayment}_${totalAmount}`);
+                return res.status(400).send("Initial payment must be less than total amount and greater than 0 for PARTIAL status");
+            }
+            pendingAmount = totalAmount - initialPayment;
+        }
+
+        if (validatedPaymentStatus === 'PENDING') {
+            if (initialPayment > 0) {
+                log(`INVALID_PENDING_AMOUNT_${initialPayment}`);
+                return res.status(400).send("Initial payment must be 0 for PENDING status");
+            }
+            pendingAmount = totalAmount;
+        }
+
         const newTrainee = new Academy({
             roll_no,
             name,
@@ -362,7 +241,7 @@ router.post("/add-new-trainee", upload.fields([
             sport_id,
             institute_id,
             batch_id,
-            amount,
+            amount: totalAmount,
             occupation,
             current_class,
             name_of_school,
@@ -370,71 +249,219 @@ router.post("/add-new-trainee", upload.fields([
             photo: photoFilename,
             signature: traineeSignatureFilename || "",
             father_signature: fatherSignatureFilename || "",
+            payment_status: validatedPaymentStatus,
+            pending_amount: pendingAmount,
             delete: false
         });
         await newTrainee.save();
 
-        if (amount && Number(amount) > 0) {
+        // Record transaction if there is an initial payment
+        if (initialPayment > 0) {
             const currentBalance = await calculateBalanceFromTransactions(institute_id);
-            const newBalance = currentBalance + Number(amount);
+            const newBalance = currentBalance + initialPayment;
 
             const newTrans = new Transaction({
                 amt_in_out: "IN",
-                amount: Number(amount),
-                description: "ACADEMY_NEW_" + roll_no,
+                amount: initialPayment,
+                description: `ACADEMY_NEW_${name}_${validatedPaymentStatus}`,
                 balance_before_transaction: currentBalance,
                 balance_after_transaction: newBalance,
-                method: payment_method,
-                identification: "ACADEMY_NEW_" + roll_no,
+                method: payment_method || 'CASH',
+                identification: `ACADEMY_NEW_ADMISSION-${name}-${roll_no}-${Date.now()}`,
                 institute: institute_id,
                 institute_name: instituteDetails.name,
                 user: userId
             });
             await newTrans.save();
-            log(`TRANSACTION_RECORDED_${roll_no}_${amount}`);
+            log(`TRANSACTION_RECORDED_${roll_no}_${initialPayment}`);
         }
 
-        const traineeData = {
-            roll_no,
-            name,
-            father,
-            dob,
-            address,
-            phone,
-            sport_name: sportDetails.name,
-            session,
-            from: firstDate,
-            to: secondDate,
-            amount,
-            occupation,
-            current_class,
-            name_of_school,
-            date_and_place: dateAndPlace,
-            institute_name: instituteDetails.name,
-            batch_name: batchDetails.name,
-        };
-
-        const pdfPath = await generateTraineePDF(
-            traineeData,
-            photoFilename ? path.join(uploadDir, photoFilename) : null,
-            traineeSignatureFilename ? path.join(uploadDir, traineeSignatureFilename) : null,
-            fatherSignatureFilename ? path.join(uploadDir, fatherSignatureFilename) : null
-        );
-
-        res.download(pdfPath, `trainee_${roll_no}_details.pdf`, (err) => {
-            if (err) {
-                log(`ERROR_SENDING_PDF_${roll_no}`);
-                console.error('Error sending PDF:', err);
-            }
-            fs.unlink(pdfPath, (unlinkErr) => {
-                if (unlinkErr) console.error('Error deleting PDF:', unlinkErr);
-            });
-        });
-
         log(`SUCCESSFULLY_ADDED_TRAINEE_${roll_no}`);
+        res.status(200).json({
+            message: "Trainee added successfully",
+            trainee: newTrainee,
+            pending_amount: pendingAmount
+        });
     } catch (error) {
         log(`ERROR_ADDING_TRAINEE`);
         console.error('Error in /add-new-trainee:', error);
+        res.status(500).send(`Server error: ${error.message}`);
+    }
+});
+
+// Add partial payment
+router.post("/add-partial-payment", async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+            log(`NO_AUTH_HEADER`);
+            return res.status(401).json({ message: "Authorization header missing" });
+        }
+
+        const userId = authHeader.split(' ')[1];
+        if (!userId) {
+            log(`NO_USER_ID_IN_AUTH`);
+            return res.status(401).json({ message: "User ID not provided in authorization" });
+        }
+
+        const { trainee_id, payment_amount, payment_method } = req.body;
+        log(`ADD_PARTIAL_PAYMENT_${trainee_id}_${payment_amount}`);
+
+        const user = await User.findById(userId);
+        if (!user) {
+            log(`USER_NOT_FOUND_${userId}`);
+            return res.status(404).json({ message: "User Not Found" });
+        }
+
+        const trainee = await Academy.findById(trainee_id);
+        if (!trainee) {
+            log(`TRAINEE_NOT_FOUND_${trainee_id}`);
+            return res.status(404).send("Trainee not found");
+        }
+
+        if (trainee.payment_status === 'PAID') {
+            log(`ALREADY_FULLY_PAID_${trainee_id}`);
+            return res.status(400).send("Trainee has already paid in full");
+        }
+
+        const paymentAmount = Number(payment_amount);
+        if (paymentAmount <= 0 || isNaN(paymentAmount)) {
+            log(`INVALID_PAYMENT_AMOUNT_${payment_amount}`);
+            return res.status(400).send("Payment amount must be greater than 0");
+        }
+
+        if (paymentAmount > trainee.pending_amount) {
+            log(`EXCEEDS_PENDING_AMOUNT_${payment_amount}_${trainee.pending_amount}`);
+            return res.status(400).send("Payment amount exceeds pending amount");
+        }
+
+        const instituteDetails = await Institute.findById(trainee.institute_id);
+        if (!instituteDetails) {
+            log(`INSTITUTE_NOT_FOUND_${trainee.institute_id}`);
+            return res.status(404).send("Institute not found");
+        }
+
+        // Update trainee's pending amount and payment status
+        trainee.pending_amount -= paymentAmount;
+        trainee.payment_status = trainee.pending_amount === 0 ? 'PAID' : 'PARTIAL';
+        await trainee.save();
+
+        // Record transaction
+        const currentBalance = await calculateBalanceFromTransactions(trainee.institute_id);
+        const newBalance = currentBalance + paymentAmount;
+
+        const newTrans = new Transaction({
+            amt_in_out: "IN",
+            amount: paymentAmount,
+            description: `PARTIAL_PAYMENT_${trainee.name}`,
+            balance_before_transaction: currentBalance,
+            balance_after_transaction: newBalance,
+            method: payment_method || 'CASH',
+            identification: `PARTIAL_PAYMENT-${trainee.name}-${trainee.roll_no}-${Date.now()}`,
+            institute: trainee.institute_id,
+            institute_name: instituteDetails.name,
+            user: userId
+        });
+        await newTrans.save();
+        log(`TRANSACTION_RECORDED_${trainee.roll_no}_${payment_amount}`);
+
+        log(`SUCCESSFULLY_ADDED_PARTIAL_PAYMENT_${trainee_id}`);
+        res.status(200).json({
+            message: "Partial payment added successfully",
+            trainee,
+            pending_amount: trainee.pending_amount
+        });
+    } catch (error) {
+        log(`ERROR_ADDING_PARTIAL_PAYMENT_${trainee_id || 'UNKNOWN'}`);
+        console.error('Error in /add-partial-payment:', error);
+        res.status(500).send(`Server error: ${error.message}`);
+    }
+});
+
+router.post("/add-partial-payment", async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+            log(`NO_AUTH_HEADER`);
+            return res.status(401).json({ message: "Authorization header missing" });
+        }
+
+        const userId = authHeader.split(' ')[1];
+        if (!userId) {
+            log(`NO_USER_ID_IN_AUTH`);
+            return res.status(401).json({ message: "User ID not provided in authorization" });
+        }
+
+        const { trainee_id, payment_amount, payment_method } = req.body;
+        log(`ADD_PARTIAL_PAYMENT_${trainee_id}_${payment_amount}`);
+
+        const user = await User.findById(userId);
+        if (!user) {
+            log(`USER_NOT_FOUND_${userId}`);
+            return res.status(404).json({ message: "User Not Found" });
+        }
+
+        const trainee = await Academy.findById(trainee_id);
+        if (!trainee) {
+            log(`TRAINEE_NOT_FOUND_${trainee_id}`);
+            return res.status(404).send("Trainee not found");
+        }
+
+        if (trainee.payment_status === 'PAID') {
+            log(`ALREADY_FULLY_PAID_${trainee_id}`);
+            return res.status(400).send("Trainee has already paid in full");
+        }
+
+        const paymentAmount = Number(payment_amount);
+        if (paymentAmount <= 0 || isNaN(paymentAmount)) {
+            log(`INVALID_PAYMENT_AMOUNT_${payment_amount}`);
+            return res.status(400).send("Payment amount must be greater than 0");
+        }
+
+        if (paymentAmount > trainee.pending_amount) {
+            log(`EXCEEDS_PENDING_AMOUNT_${payment_amount}_${trainee.pending_amount}`);
+            return res.status(400).send("Payment amount exceeds pending amount");
+        }
+
+        const instituteDetails = await Institute.findById(trainee.institute_id);
+        if (!instituteDetails) {
+            log(`INSTITUTE_NOT_FOUND_${trainee.institute_id}`);
+            return res.status(404).send("Institute not found");
+        }
+
+        // Update trainee's pending amount and payment status
+        trainee.pending_amount -= paymentAmount;
+        trainee.payment_status = trainee.pending_amount === 0 ? 'PAID' : 'PARTIAL';
+        await trainee.save();
+
+        // Record transaction
+        const currentBalance = await calculateBalanceFromTransactions(trainee.institute_id);
+        const newBalance = currentBalance + paymentAmount;
+
+        const newTrans = new Transaction({
+            amt_in_out: "IN",
+            amount: paymentAmount,
+            description: `PARTIAL_PAYMENT_${trainee.name}`,
+            balance_before_transaction: currentBalance,
+            balance_after_transaction: newBalance,
+            method: payment_method || 'CASH',
+            identification: `PARTIAL_PAYMENT-${trainee.name}-${trainee.roll_no}-${Date.now()}`,
+            institute: trainee.institute_id,
+            institute_name: instituteDetails.name,
+            user: userId
+        });
+        await newTrans.save();
+        log(`TRANSACTION_RECORDED_${trainee.roll_no}_${payment_amount}`);
+
+        log(`SUCCESSFULLY_ADDED_PARTIAL_PAYMENT_${trainee_id}`);
+        res.status(200).json({
+            message: "Partial payment added successfully",
+            trainee,
+            pending_amount: trainee.pending_amount
+        });
+    } catch (error) {
+        log(`ERROR_ADDING_PARTIAL_PAYMENT_${trainee_id || 'UNKNOWN'}`);
+        console.error('Error in /add-partial-payment:', error);
         res.status(500).send(`Server error: ${error.message}`);
     }
 });

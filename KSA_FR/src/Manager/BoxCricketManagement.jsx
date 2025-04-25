@@ -470,10 +470,9 @@ const BoxCricketManagement = () => {
                                     onChange={handleInputChange}
                                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                                 >
-                                    <option value="CARD">CARD</option>
-                                    <option value="CASH">CASH</option>
-                                    <option value="UPI">UPI</option>
-                                    <option value="NET BANKING">Net Banking</option>
+                                    <option value="CASH">Cash</option>
+                                    <option value="UPI">Online</option>
+                                    <option value="CARD">Card</option>
                                 </select>
                             </div>
                             <div className="flex gap-4 mt-6">

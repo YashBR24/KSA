@@ -762,12 +762,9 @@ function EventManagement() {
                                             className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                                             required
                                         >
-                                            <option value="UPI">UPI</option>
                                             <option value="CASH">Cash</option>
+                                            <option value="UPI">Online</option>
                                             <option value="CARD">Card</option>
-                                            <option value="NET BANKING">Net Banking</option>
-                                            <option value="CHEQUE">Cheque</option>
-                                            <option value="DEMAND DRAFT">Demand Draft</option>
                                         </select>
                                     </div>
                                     <div>

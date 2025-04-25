@@ -1,6 +1,7 @@
 const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { log } = require("../Logs/logs");
 const { generateOTP, isOtpExpired } = require('../utils/otpGenerator');
 const { verifyRecaptcha } = require('../utils/recaptcha');
 
@@ -245,11 +246,11 @@ exports.login = async (req, res) => {
 //console.log(1)
 //     log(`LOGIN_${email}`);
     // Verify reCAPTCHA
-    const recaptchaValid = await verifyRecaptcha(recaptchaToken);
-
-    if (!recaptchaValid) {
-        return res.status(400).json({ message: 'reCAPTCHA verification failed' });
-    }
+    // const recaptchaValid = await verifyRecaptcha(recaptchaToken);
+    //
+    // if (!recaptchaValid) {
+    //     return res.status(400).json({ message: 'reCAPTCHA verification failed' });
+    // }
 
     try {
 
@@ -279,13 +280,13 @@ exports.login = async (req, res) => {
         //         otpSent: true
         //     });
         // }
-        log(`SUCCESSFULL_LOGIN_${email}`);
+        // log(`SUCCESSFULL_LOGIN_${email}`);
         const token = jwt.sign({ id: user._id.toHexString(),email:user.email,mobile:user.mobile_no,role:user.role }, process.env.JWT_SECRET); // Token can use the stringified ID
 
         res.status(200).json({ message: 'Login successful',role:user.role, token ,id: user._id.toHexString(),email:user.email,mobile:user.mobile_no,name:user.name});
 
     } catch (error) {
-        log(`LOGIN_ERROR`);
+        // log(`LOGIN_ERROR`);
         console.error(error);
         res.status(500).json({ message: 'Server error' });
     }

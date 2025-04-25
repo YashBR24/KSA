@@ -733,15 +733,15 @@ const StaffManagement = () => {
                             </div>
                             <div>
                                 <label className={labelClasses}>Phone</label>
-                                <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className={inputClasses} required />
+                                <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} className={inputClasses} />
                             </div>
                             <div>
                                 <label className={labelClasses}>Date of Birth</label>
-                                <input type="date" name="dob" value={formData.dob} onChange={handleInputChange} className={inputClasses} required />
+                                <input type="date" name="dob" value={formData.dob} onChange={handleInputChange} className={inputClasses} />
                             </div>
                             <div className="md:col-span-2">
                                 <label className={labelClasses}>Address</label>
-                                <textarea name="address" value={formData.address} onChange={handleInputChange} rows="3" className={inputClasses} required></textarea>
+                                <textarea name="address" value={formData.address} onChange={handleInputChange} rows="3" className={inputClasses}></textarea>
                             </div>
                             {!editMode && (
                                 <div>

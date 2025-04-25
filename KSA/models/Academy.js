@@ -21,6 +21,12 @@ const academySchema = new mongoose.Schema({
     from: { type: Date, default: Date.now },
     to: { type: Date, required: false },
     payment_number: { type: Number },
+    payment_status: {
+        type: String,
+        enum: ['PAID', 'PARTIAL', 'PENDING'],
+        default: 'PENDING'
+    },
+    pending_amount: { type: Number, default: 0 },
     plan_id: { type: Schema.Types.ObjectId, ref: 'DetailsAcademy', required: false },
     sport_id: { type: Schema.Types.ObjectId, ref: 'Sport', required: true }, // New field
     institute_id: { type: Schema.Types.ObjectId, ref: 'Institute', required: true }, // New field
@@ -30,7 +36,8 @@ const academySchema = new mongoose.Schema({
     id_card_generated: { type: Boolean, default: false },
     id_card_given: { type: Boolean, default: false },
     createdOn: { type: Date, default: Date.now },
-    delete: { type: Boolean, default: false }
+    delete: { type: Boolean, default: false },
+
 });
 
 const Academy = mongoose.models.Academy || mongoose.model('Academy', academySchema);

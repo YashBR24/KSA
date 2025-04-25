@@ -258,7 +258,7 @@ const TraineeSearch = () => {
 
                 {searchRollNo.length === 8 && !filteredTrainee && !loading && (
                     <div className="p-4 bg-red-50 rounded-lg text-red-600 text-sm">
-                        No trainee found with this roll number.
+                        No Student found with this roll number.
                     </div>
                 )}
             </div>
@@ -285,6 +285,7 @@ const Dashboard = ({ onNavigate }) => {
             const data = await response.data;
             setDashboardData(data);
             setLoading(false);
+        
         } catch (error) {
             console.error("Error fetching dashboard data:", error);
             setLoading(false);

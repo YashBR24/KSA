@@ -493,9 +493,8 @@ const InventoryManagement = () => {
                                     required
                                 >
                                     <option value="CASH">Cash</option>
+                                    <option value="UPI">Online</option>
                                     <option value="CARD">Card</option>
-                                    <option value="UPI">UPI</option>
-                                    <option value="BANK_TRANSFER">Bank Transfer</option>
                                 </select>
                             </div>
                             <div className="flex justify-end space-x-3">

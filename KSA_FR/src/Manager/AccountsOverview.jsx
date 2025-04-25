@@ -26,14 +26,39 @@ const AccountsOverview = () => {
     totalOut: 0,
     currentBalance: 0,
   });
-  const [filters, setFilters] = useState({
-    amtInOut: "",
-    fromDate: "",
-    toDate: "",
-    description: "",
-    method: "",
-    institute: "",
-  });
+
+  const ADMIN_IDS = import.meta.env.VITE_ADMIN_IDS?.split(',') || [];
+  const userId = localStorage.getItem("userid");
+  const isAdmin = ADMIN_IDS.includes(userId);
+  
+  const getDefaultFilters = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+
+    const firstDay = new Date(year, month, 1);
+    const todayDate = new Date(year, month, today.getDate());
+
+    const formatDate = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    const result = {
+      amtInOut: "",
+      fromDate: formatDate(firstDay),
+      toDate: formatDate(todayDate),
+      description: "",
+      method: "",
+      institute: "",
+    };
+    console.log("Default filters:", result);
+    return result;
+  };
+
+  const [filters, setFilters] = useState(getDefaultFilters());
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [newExpense, setNewExpense] = useState({
     amt_in_out: "",
@@ -80,6 +105,8 @@ const AccountsOverview = () => {
       const response = await axios.post(`${ip}/api/accounts/transaction/calculate-balance`, {
         userId: localStorage.getItem("userid"),
         instituteId,
+        startDate: filters.fromDate,
+        endDate: filters.toDate,
       });
       
       setTotals({
@@ -104,11 +131,7 @@ const AccountsOverview = () => {
         userId: userid,
         instituteId: selectedInstitute,
       });
-  
-      // Log the response to debug
-      console.log("Transaction response:", response.data);
-  
-      // Make sure we handle the response data properly
+
       let transactions = [];
       if (Array.isArray(response.data)) {
         transactions = response.data;
@@ -116,20 +139,13 @@ const AccountsOverview = () => {
         transactions = response.data.transactions;
       } else {
         console.error("Unexpected response format:", response.data);
-        transactions = []; // Set to empty array if format is unexpected
+        transactions = [];
       }
-  
-      console.log("Processed transactions:", transactions);
-  
-      // Check if we have any transactions after processing
-      if (transactions.length === 0) {
-        console.log("No transactions found in response");
-      }
-  
+
+      console.log("Fetched transactions:", transactions);
       setAccounts(transactions);
       setError(null);
       
-      // Fetch updated balance after getting transactions
       await fetchInstituteBalance(selectedInstitute);
     } catch (error) {
       console.error("Error fetching accounts:", error);
@@ -139,7 +155,6 @@ const AccountsOverview = () => {
       setLoading(false);
     }
   };
-
 
   const closeExpenseForm = () => {
     setNewExpense({
@@ -170,7 +185,6 @@ const AccountsOverview = () => {
       });
 
       if (response.data) {
-        // Refresh data after successful transaction
         await Promise.all([
           fetchAccounts(),
           fetchInstituteBalance(selectedInstitute),
@@ -188,67 +202,88 @@ const AccountsOverview = () => {
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters({ ...filters, [name]: value });
+    setFilters((prev) => {
+      const newFilters = { ...prev, [name]: value };
+      console.log("Updated filters:", newFilters);
+      return newFilters;
+    });
 
     if (name === "institute") {
       setSelectedInstitute(value);
     }
   };
 
-const applyFiltersAndCalculateBalances = (data) => {
-  console.log("Applying filters to data:", data);
+  const applyFiltersAndCalculateBalances = (data) => {
+    if (!Array.isArray(data)) {
+      console.error("Input data is not an array:", data);
+      return [];
+    }
   
-  if (!Array.isArray(data)) {
-    console.error("Input data is not an array:", data);
-    return [];
-  }
-  
-  if (data.length === 0) {
-    console.log("Input data array is empty");
-    return [];
-  }
+    if (data.length === 0) {
+      console.log("No transactions to filter");
+      return [];
+    }
 
-  const filtered = data.filter((account) => {
-    // Make sure account exists before trying to access its properties
-    if (!account) {
-      console.log("Found null/undefined account in data");
-      return false;
-    }
-    
-    const matchesAmtInOut =
-      !filters.amtInOut || account.amt_in_out === filters.amtInOut;
-    const matchesMethod = !filters.method || account.method === filters.method;
-    const matchesDescription =
-      !filters.description ||
-      account.description
-        ?.toLowerCase()
-        .includes(filters.description.toLowerCase());
-        const matchesInstitute =
-        !filters.institute || 
-        (typeof account.institute === 'object' ? 
-          account.institute._id.toString() === filters.institute : 
-          account.institute === filters.institute);
-    let matchesDateRange = true;
-    if (filters.fromDate) {
-      matchesDateRange =
-        new Date(account.createdAt) >= new Date(filters.fromDate);
-    }
-    if (filters.toDate) {
-      matchesDateRange =
-        matchesDateRange && new Date(account.createdAt) <= new Date(filters.toDate);
-    }
-    return (
-      matchesAmtInOut &&
-      matchesMethod &&
-      matchesDescription &&
-      matchesInstitute &&
-      matchesDateRange
-    );
-  }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  
-  console.log("Filtered data:", filtered);
-  return filtered;
-};
+    const filtered = data.filter((account) => {
+      if (!account) {
+        console.log("Found null/undefined account in data");
+        return false;
+      }
+      
+      const matchesAmtInOut =
+        !filters.amtInOut || account.amt_in_out === filters.amtInOut;
+      const matchesMethod = !filters.method || account.method === filters.method;
+      const matchesDescription =
+        !filters.description ||
+        (account.description &&
+          account.description
+            .toLowerCase()
+            .includes(filters.description.toLowerCase()));
+      const matchesInstitute =
+        !filters.institute ||
+        (account.institute
+          ? typeof account.institute === 'object'
+            ? account.institute._id.toString() === filters.institute
+            : account.institute.toString() === filters.institute
+          : false);
+      
+      // Normalize dates to compare only YYYY-MM-DD
+      let matchesDateRange = true;
+      if (filters.fromDate) {
+        const fromDate = new Date(filters.fromDate);
+        fromDate.setHours(0, 0, 0, 0);
+        const createdAt = new Date(account.createdAt);
+        createdAt.setHours(0, 0, 0, 0);
+        matchesDateRange = createdAt >= fromDate;
+      }
+      if (filters.toDate) {
+        const toDate = new Date(filters.toDate);
+        toDate.setHours(23, 59, 59, 999); // Include entire toDate
+        const createdAt = new Date(account.createdAt);
+        matchesDateRange = matchesDateRange && createdAt <= toDate;
+      }
+
+      const passesFilter =
+        matchesAmtInOut &&
+        matchesMethod &&
+        matchesDescription &&
+        matchesInstitute &&
+        matchesDateRange;
+
+      console.log("Account:", account, "Passes filter:", passesFilter, {
+        matchesAmtInOut,
+        matchesMethod,
+        matchesDescription,
+        matchesInstitute,
+        matchesDateRange,
+      });
+
+      return passesFilter;
+    }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    console.log("Filtered transactions:", filtered);
+    return filtered;
+  };
 
   const handleDeleteClick = (transaction) => {
     setTransactionToDelete(transaction);
@@ -265,7 +300,6 @@ const applyFiltersAndCalculateBalances = (data) => {
         transactionId: transactionToDelete._id,
       });
 
-      // Refresh data after successful deletion
       await Promise.all([
         fetchAccounts(),
         fetchInstituteBalance(selectedInstitute),
@@ -287,19 +321,12 @@ const applyFiltersAndCalculateBalances = (data) => {
   };
 
   useEffect(() => {
-    console.log("Raw accounts data:", accounts);
     const filteredWithBalances = applyFiltersAndCalculateBalances(accounts);
-    console.log("Filtered accounts data:", filteredWithBalances);
     setFilteredData(filteredWithBalances);
     setCurrentPage(1);
   }, [accounts, filters]);
 
   useEffect(() => {
-    setFilters((prev) => ({
-      ...prev,
-      fromDate: "2025-03-01",
-      toDate: "2025-03-31",
-    }));
     fetchInstitutes();
   }, []);
 
@@ -308,6 +335,12 @@ const applyFiltersAndCalculateBalances = (data) => {
       fetchAccounts();
     }
   }, [selectedInstitute]);
+
+  useEffect(() => {
+    if (selectedInstitute) {
+      fetchInstituteBalance(selectedInstitute);
+    }
+  }, [filters.fromDate, filters.toDate, selectedInstitute]);
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const paginatedData = filteredData.slice(
@@ -327,8 +360,6 @@ const applyFiltersAndCalculateBalances = (data) => {
           "Amount",
           "Description",
           "Method",
-          "Balance Before",
-          "Balance After",
         ],
       ],
       body: filteredData.map((account, index) => [
@@ -338,8 +369,6 @@ const applyFiltersAndCalculateBalances = (data) => {
         account.amount,
         account.description,
         account.method,
-        account.balance_before_transaction,
-        account.balance_after_transaction,
       ]),
     });
     doc.save("account-statement.pdf");
@@ -354,8 +383,6 @@ const applyFiltersAndCalculateBalances = (data) => {
         Amount: account.amount,
         Description: account.description,
         Method: account.method,
-        "Balance Before": account.balance_before_transaction,
-        "Balance After": account.balance_after_transaction,
       }))
     );
     const wb = XLSX.utils.book_new();
@@ -370,7 +397,6 @@ const applyFiltersAndCalculateBalances = (data) => {
   return (
     <div className="min-h-screen bg-transparent p-0 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header Actions */}
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full">
           <div className="flex flex-wrap gap-2 sm:gap-4 w-full sm:w-auto">
             <button
@@ -397,7 +423,6 @@ const applyFiltersAndCalculateBalances = (data) => {
           </button>
         </div>
 
-        {/* Institute Selection */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
           <div className="flex items-center gap-4 mb-4">
             <Building2 className="w-8 h-8 text-blue-500" />
@@ -423,7 +448,6 @@ const applyFiltersAndCalculateBalances = (data) => {
 
         {selectedInstitute && (
           <>
-            {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white rounded-xl shadow-sm p-6 border border-blue-100">
                 <div className="flex items-center justify-between">
@@ -456,7 +480,6 @@ const applyFiltersAndCalculateBalances = (data) => {
               </div>
             </div>
 
-            {/* Filters */}
             <div className="bg-white rounded-lg sm:rounded-xl shadow-sm p-3 sm:p-4 md:p-6">
               <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">
                 Filters
@@ -489,11 +512,8 @@ const applyFiltersAndCalculateBalances = (data) => {
                   >
                     <option value="">All</option>
                     <option value="CASH">Cash</option>
-                    <option value="UPI">UPI</option>
+                    <option value="UPI">Online</option>
                     <option value="CARD">Card</option>
-                    <option value="NET BANKING">Net Banking</option>
-                    <option value="CHEQUE">Cheque</option>
-                    <option value="DEMAND DRAFT">Demand Draft</option>
                   </select>
                 </div>
                 <div className="col-span-2 sm:col-span-3 lg:col-span-2">
@@ -536,7 +556,6 @@ const applyFiltersAndCalculateBalances = (data) => {
               </div>
             </div>
 
-            {/* Transactions Table */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="flex justify-between items-center p-4">
                 <span className="text-gray-600 text-sm">
@@ -580,22 +599,18 @@ const applyFiltersAndCalculateBalances = (data) => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Method
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Balance Before
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Balance After
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Action
-                      </th>
+                      {isAdmin && (
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Action
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {paginatedData.length === 0 ? (
                       <tr>
                         <td
-                          colSpan="9"
+                          colSpan={isAdmin ? 7 : 6}
                           className="px-6 py-4 text-center text-gray-500"
                         >
                           No transactions found for the selected institute and
@@ -640,23 +655,19 @@ const applyFiltersAndCalculateBalances = (data) => {
                             {account.description || "N/A"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {account.method || "N/A"}
+                            {account.method === "UPI" ? "ONLINE" : account.method || "N/A"}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            ₹{Number(account.balance_before_transaction || 0).toFixed(2)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            ₹{Number(account.balance_after_transaction || 0).toFixed(2)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <button
-                              onClick={() => handleDeleteClick(account)}
-                              className="text-red-600 hover:text-red-800"
-                              disabled={loading}
-                            >
-                              <Trash2 className="w-5 h-5" />
-                            </button>
-                          </td>
+                          {isAdmin && (
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <button
+                                onClick={() => handleDeleteClick(account)}
+                                className="text-red-600 hover:text-red-800"
+                                disabled={loading}
+                              >
+                                <Trash2 className="w-5 h-5" />
+                              </button>
+                            </td>
+                          )}
                         </tr>
                       ))
                     )}
@@ -689,7 +700,6 @@ const applyFiltersAndCalculateBalances = (data) => {
           </>
         )}
 
-        {/* Add Transaction Modal */}
         {showExpenseForm && (
           <div className="fixed inset-0 bg-black bg-opacity-10 flex items-center justify-center p-4">
             <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
@@ -732,11 +742,8 @@ const applyFiltersAndCalculateBalances = (data) => {
                   >
                     <option value="">Select Method</option>
                     <option value="CASH">Cash</option>
-                    <option value="UPI">UPI</option>
+                    <option value="UPI">Online</option>
                     <option value="CARD">Card</option>
-                    <option value="NET BANKING">Net Banking</option>
-                    <option value="CHEQUE">Cheque</option>
-                    <option value="DEMAND DRAFT">Demand Draft</option>
                   </select>
                 </div>
                 <div>
@@ -779,7 +786,6 @@ const applyFiltersAndCalculateBalances = (data) => {
                     type="text"
                     name="description"
                     value={newExpense.description}
-                    
                     onChange={handleExpenseChange}
                     className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     required
@@ -787,7 +793,8 @@ const applyFiltersAndCalculateBalances = (data) => {
                 </div>
                 <div className="flex gap-4 pt-4">
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={handleAddExpense}
                     className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                     disabled={loading}
                   >
@@ -806,7 +813,6 @@ const applyFiltersAndCalculateBalances = (data) => {
           </div>
         )}
 
-        {/* Delete Confirmation Modal */}
         {showDeleteConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
@@ -821,7 +827,7 @@ const applyFiltersAndCalculateBalances = (data) => {
               </div>
               <p className="text-gray-700 mb-6">
                 Are you sure you want to delete this transaction:{" "}
-                &quot;{transactionToDelete?.description}&quot; for ₹
+                "{transactionToDelete?.description}" for ₹
                 {transactionToDelete?.amount.toFixed(2)}?
               </p>
               <div className="flex gap-4">
