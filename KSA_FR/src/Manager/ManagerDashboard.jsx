@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Menu, X, Home, Users, Calendar, Landmark, LogOut, Phone, CalendarCheck, Image, Box, UserCheck, Building, Trophy, LandPlot, IndianRupee, FileClock } from 'lucide-react';
+import { Menu, X, Home, Users, Calendar, Landmark, LogOut, Phone, CalendarCheck, Image, Box, UserCheck, Building, Trophy, LandPlot, IndianRupee, FileClock,ReceiptIndianRupee } from 'lucide-react';
 import AcademyManagement from "./AcademyManagement";
 import AttendanceManagement from "./AttendanceManagement";
 import AccountsOverview from "./AccountsOverview";
@@ -16,6 +16,7 @@ import StaffAttendance from "./StaffAttendance";
 import ManagerHome from "./ManagerHome";
 import PlanManagement from "./PlanManagement";
 import ExtraPage from "../Admin/AdminExtraPage.jsx";
+import PendingPayments from "./PendingPayments.jsx";
 
 const ADMIN_ID1 = import.meta.env.VITE_ADMIN_IDS;
 const ADMIN_ID2 = import.meta.env.VITE_ADMIN_IDS1;
@@ -66,6 +67,7 @@ function ManagerDashboard() {
 
     switch (activeComponent) {
       case "Academy": return <AcademyManagement />;
+      case "PendingPayments": return<PendingPayments/>;
       case "Attendance": return <AttendanceManagement />;
       case "Accounts": return <AccountsOverview />;
       case "BoxCricket": return <BoxCricketManagement />;
@@ -88,6 +90,7 @@ function ManagerDashboard() {
   const menuItems = [
     { label: "Home", key: "ManagerHome", icon: <Home size={18} /> },
     { label: "Academy", key: "Academy", icon: <Building size={18} /> },
+    { label: "PendingPayments", key: "PendingPayments", icon: <ReceiptIndianRupee size={18} /> },
     { label: "Attendance", key: "Attendance", icon: <Calendar size={18} /> },
     { label: "Accounts Overview", key: "Accounts", icon: <IndianRupee size={18} /> },
     { label: "Plans Management", key: "Plans", icon: <LandPlot size={18} /> },

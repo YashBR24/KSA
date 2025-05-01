@@ -8,7 +8,7 @@ const app = express();
 
 // CORS configuration: allow everything
 app.use(cors({
-    origin: '*', // Allow all origins
+    origin: '*', // Allow all origins https://ksa.nuviontech.com
     methods: '*', // Allow all HTTP methods
     allowedHeaders: '*', // Allow all headers
     credentials: true, // Allow cookies if needed for authentication
@@ -21,19 +21,16 @@ app.use(express.json());
 require('dotenv').config();  // Load environment variables
 // const mongoose = require('mongoose');
 
-// const MONGO_URI = `mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/${process.env.MONGO_DB}?authSource=admin`;
-//
-// mongoose.connect(MONGO_URI, {
-//     useNewUrlParser: true,
-//     useUnifiedTopology: true
-// })
-//     .then(() => console.log('MongoDB connected'))
-//     .catch(err => console.log('MongoDB connection error:', err));
-//
-// // Connect to MongoDB
-mongoose.connect("mongodb://localhost:27017/gsa")
-    .then(() => console.log('MongoDB connected'))
-    .catch(err => console.log('MongoDB connection error:', err));
+ // const MONGO_URI = `mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@${process.env.MONGO_HOST}:${process.env.MONGO_PORT}/${process.env.MONGO_DB}?authSource=admin`;
+ // mongoose.connect(MONGO_URI, {
+ //     useNewUrlParser: true,
+ //     useUnifiedTopology: true
+ // }).then(() => console.log('MongoDB connected')).catch(err => console.log('MongoDB connection error:', err));
+// Connect to MongoDB
+mongoose.connect("mongodb://127.0.0.1:27017/gsa")
+   .then(() => console.log('MongoDB connected'))
+   .catch(err => console.log('MongoDB connection error:', err));
+
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
@@ -54,5 +51,5 @@ app.use('/api/superuser', require('./routes/SuperUserRoutes'));
 app.use('/uploads', express.static('uploads'));
 
 // Start server
-const PORT = 5000 || 5000;
+const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
