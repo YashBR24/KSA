@@ -10,7 +10,7 @@ const transactionSchema = new mongoose.Schema({
         type: String,
         required: true,
         default: 'CASH',
-        enum: ['CASH', 'UPI', 'CARD', 'NET BANKING', 'CHEQUE', 'DEMAND DRAFT', , ,]
+        enum: ['CASH', 'UPI', 'CARD', 'NET BANKING', 'CHEQUE', 'DEMAND DRAFT',]
     },
     createdAt: { type: Date, default: Date.now },
     institute: {
