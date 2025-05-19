@@ -1907,10 +1907,19 @@ const AccountsOverview = () => {
       description: "",
       method: "",
       institute: "",
+      sport:"",
     };
     console.log("Default filters:", result);
     return result;
   };
+
+  // Add function to extract sport name from description (place after fetchSports)
+const extractSportName = (description) => {
+  if (!description) return "N/A";
+  const descriptionLower = description.toLowerCase();
+  const sport = sports.find((s) => descriptionLower.includes(s.name.toLowerCase()));
+  return sport ? sport.name : "N/A";
+};
 
   const [filters, setFilters] = useState(getDefaultFilters());
   const [showExpenseForm, setShowExpenseForm] = useState(false);
@@ -2088,24 +2097,99 @@ const AccountsOverview = () => {
     }
   };
 
+  // const applyFiltersAndCalculateBalances = (data) => {
+  //   if (!Array.isArray(data)) {
+  //     console.error("Input data is not an array:", data);
+  //     return [];
+  //   }
+
+  //   if (data.length === 0) {
+  //     console.log("No transactions to filter");
+  //     return [];
+  //   }
+
+  //   const filtered = data
+  //     .filter((account) => {
+  //       if (!account) {
+  //         console.log("Found null/undefined account in data");
+  //         return false;
+  //       }
+
+  //       const matchesAmtInOut =
+  //         !filters.amtInOut || account.amt_in_out === filters.amtInOut;
+  //       const matchesMethod = !filters.method || account.method === filters.method;
+  //       const matchesDescription =
+  //         !filters.description ||
+  //         (account.description &&
+  //           account.description
+  //             .toLowerCase()
+  //             .includes(filters.description.toLowerCase()));
+  //       const matchesInstitute =
+  //         !filters.institute ||
+  //         (account.institute
+  //           ? typeof account.institute === "object"
+  //             ? account.institute._id.toString() === filters.institute
+  //             : account.institute.toString() === filters.institute
+  //           : false);
+
+  //       // Normalize dates to compare only YYYY-MM-DD
+  //       let matchesDateRange = true;
+  //       if (filters.fromDate) {
+  //         const fromDate = new Date(filters.fromDate);
+  //         fromDate.setHours(0, 0, 0, 0);
+  //         const createdAt = new Date(account.createdAt);
+  //         createdAt.setHours(0, 0, 0, 0);
+  //         matchesDateRange = createdAt >= fromDate;
+  //       }
+  //       if (filters.toDate) {
+  //         const toDate = new Date(filters.toDate);
+  //         toDate.setHours(23, 59, 59, 999); // Include entire toDate
+  //         const createdAt = new Date(account.createdAt);
+  //         matchesDateRange = matchesDateRange && createdAt <= toDate;
+  //       }
+
+  //       const passesFilter =
+  //         matchesAmtInOut &&
+  //         matchesMethod &&
+  //         matchesDescription &&
+  //         matchesInstitute &&
+  //         matchesDateRange;
+
+  //       console.log("Account:", account, "Passes filter:", passesFilter, {
+  //         matchesAmtInOut,
+  //         matchesMethod,
+  //         matchesDescription,
+  //         matchesInstitute,
+  //         matchesDateRange,
+  //       });
+
+  //       return passesFilter;
+  //     })
+  //     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  //   console.log("Filtered transactions:", filtered);
+  //   return filtered;
+  // };
+
+
   const applyFiltersAndCalculateBalances = (data) => {
     if (!Array.isArray(data)) {
       console.error("Input data is not an array:", data);
       return [];
     }
-
+  
     if (data.length === 0) {
       console.log("No transactions to filter");
       return [];
     }
-
+  
     const filtered = data
       .filter((account) => {
         if (!account) {
           console.log("Found null/undefined account in data");
           return false;
         }
-
+  
         const matchesAmtInOut =
           !filters.amtInOut || account.amt_in_out === filters.amtInOut;
         const matchesMethod = !filters.method || account.method === filters.method;
@@ -2122,7 +2206,11 @@ const AccountsOverview = () => {
               ? account.institute._id.toString() === filters.institute
               : account.institute.toString() === filters.institute
             : false);
-
+        const matchesSport =
+          !filters.sport ||
+          (account.description &&
+            account.description.toLowerCase().includes(filters.sport.toLowerCase()));
+  
         // Normalize dates to compare only YYYY-MM-DD
         let matchesDateRange = true;
         if (filters.fromDate) {
@@ -2138,26 +2226,28 @@ const AccountsOverview = () => {
           const createdAt = new Date(account.createdAt);
           matchesDateRange = matchesDateRange && createdAt <= toDate;
         }
-
+  
         const passesFilter =
           matchesAmtInOut &&
           matchesMethod &&
           matchesDescription &&
           matchesInstitute &&
+          matchesSport &&
           matchesDateRange;
-
+  
         console.log("Account:", account, "Passes filter:", passesFilter, {
           matchesAmtInOut,
           matchesMethod,
           matchesDescription,
           matchesInstitute,
+          matchesSport,
           matchesDateRange,
         });
-
+  
         return passesFilter;
       })
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
+  
     console.log("Filtered transactions:", filtered);
     return filtered;
   };
@@ -2266,18 +2356,39 @@ const AccountsOverview = () => {
     const doc = new jsPDF();
     doc.text("Account Statement", 20, 10);
     autoTable(doc, {
-      head: [["#", "Date", "Type", "Amount", "Description", "Method"]],
+      head: [["#", "Date", "Type", "Amount", "Description", "Sport", "Method"]],
       body: filteredData.map((account, index) => [
         index + 1,
         new Date(account.createdAt).toLocaleString(),
         account.amt_in_out,
         account.amount,
         account.description,
+        extractSportName(account.description),
         account.method,
       ]),
     });
     doc.save("account-statement.pdf");
   };
+
+  // const handleDownloadXLSX = () => {
+  //   const ws = XLSX.utils.json_to_sheet(
+  //     filteredData.map((account, index) => ({
+  //       "#": index + 1,
+  //       Date: new Date(account.createdAt).toLocaleString(),
+  //       "Amount In/Out": account.amt_in_out,
+  //       Amount: account.amount,
+  //       Description: account.description,
+  //       Method: account.method,
+  //     }))
+  //   );
+  //   const wb = XLSX.utils.book_new();
+  //   XLSX.utils.book_append_sheet(wb, ws, "Accounts");
+  //   const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  //   const data = new Blob([excelBuffer], {
+  //     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  //   });
+  //   saveAs(data, "account-statement.xlsx");
+  // };
 
   const handleDownloadXLSX = () => {
     const ws = XLSX.utils.json_to_sheet(
@@ -2287,6 +2398,7 @@ const AccountsOverview = () => {
         "Amount In/Out": account.amt_in_out,
         Amount: account.amount,
         Description: account.description,
+        Sport: extractSportName(account.description),
         Method: account.method,
       }))
     );
@@ -2421,6 +2533,24 @@ const AccountsOverview = () => {
                     <option value="CARD">Card</option>
                   </select>
                 </div>
+                <div>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                      Sport
+                    </label>
+                    <select
+                      name="sport"
+                      value={filters.sport}
+                      onChange={handleFilterChange}
+                      className="w-full rounded-md sm:rounded-lg text-sm border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 sm:py-2"
+                    >
+                      <option value="">All</option>
+                      {sports.map((sport) => (
+                        <option key={sport._id} value={sport.name}>
+                          {sport.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 <div className="col-span-2 sm:col-span-3 lg:col-span-2">
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                     Description
@@ -2483,7 +2613,7 @@ const AccountsOverview = () => {
                     </p>
                   </div>
                 </div>
-                <div>
+                {/* <div>
                   <h3 className="text-base font-medium text-gray-900 mb-2">
                     Sport-wise Totals
                   </h3>
@@ -2503,7 +2633,7 @@ const AccountsOverview = () => {
                         ))
                     )}
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -2546,6 +2676,9 @@ const AccountsOverview = () => {
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Description
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Sport
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Method
@@ -2607,6 +2740,9 @@ const AccountsOverview = () => {
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-500">
                             {account.description || "N/A"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {extractSportName(account.description)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {account.method === "UPI"

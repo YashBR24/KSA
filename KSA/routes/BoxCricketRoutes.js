@@ -354,7 +354,7 @@ const router = express.Router();
 const Turf = require("../models/Turf");
 const Transaction = require("../models/Transaction");
 const Balance = require("../models/Balance");
-const User = require("../models/User");
+const User = require("../models/user");
 const Institute = require("../models/Institute");
 const { log } = require("../Logs/logs");
 

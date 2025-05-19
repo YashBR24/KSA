@@ -2065,6 +2065,10 @@ const TraineeManagement = () => {
   const [selectedTrainee, setSelectedTrainee] = useState(null);
   const [selectedSport, setSelectedSport] = useState("all");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const ADMIN_IDS = import.meta.env.VITE_ADMIN_IDS?.split(",") || [];
+  const userId = localStorage.getItem("userid");
+  const isAdmin = ADMIN_IDS.includes(userId);
 
   const axiosInstance = axios.create({
     headers: {
@@ -2100,14 +2104,246 @@ const TraineeManagement = () => {
     fetchBatches();
   }, []);
 
+  // const handleDownloadReceipt = async (data) => {
+  //   try {
+
+  //     const transactions = await axios.post(
+  //       `${ip}/api/manager/fetch-trainee-transactions`,
+  //       {
+  //         trans_id: data.trans_identification
+  //       }
+  //     );
+  //     const trans_data = transactions.data.message
+      
+
+
+  //     const doc = new jsPDF({
+  //       orientation: "portrait",
+  //       unit: "pt",
+  //       format: "a4",
+  //     });
+
+  //     const colors = {
+  //       primary: "#007e13",
+  //       secondary: "#dbfee5",
+  //       text: "#1F2937",
+  //       muted: "#6B7280",
+  //       success: "#059669",
+  //       warning: "#D97706",
+  //       danger: "#DC2626",
+  //       border: "#E5E7EB",
+  //     };
+
+  //     const trainee = {
+  //       name: data.name || "N/A",
+  //       phone: data.phone || data.roll_no || "N/A",
+  //       sport_id: data.sport_id || "",
+  //       batch_id: data.batch_id || "",
+  //       plan_id: data.plan_id || "",
+  //       amount: data.amount || 0,
+  //       pending_amount: data.pending_amount || 0,
+  //       payment_status: data.payment_status || "N/A",
+  //       method: data.method || "N/A",
+  //       from: data.from || "",
+  //       to: data.to || "",
+  //     };
+
+  //     doc.setFillColor("#FFFFFF");
+  //     doc.rect(0, 0, 595.28, 120, "F");
+
+  //     const logoUrl = "/logo.jpg";
+  //     try {
+  //       const logoImg = await new Promise((resolve, reject) => {
+  //         const img = new Image();
+  //         img.crossOrigin = "Anonymous";
+  //         img.src = logoUrl;
+  //         img.onload = () => resolve(img);
+  //         img.onerror = () => reject(new Error("Failed to load logo"));
+  //       });
+  //       doc.addImage(logoImg, "JPEG", 40, 20, 120, 0);
+  //     } catch (err) {
+  //       console.warn("Failed to load logo:", err);
+  //       doc.setFontSize(10);
+  //       doc.setTextColor(colors.muted);
+  //       doc.text("Logo not available", 40, 30);
+  //     }
+
+  //     doc.setFontSize(14);
+  //     doc.setFont("helvetica", "normal");
+  //     doc.setTextColor(colors.text);
+  //     doc.text("KAVYA SPORTS ACADEMY", 40, 150);
+  //     doc.setFontSize(10);
+  //     doc.setTextColor(colors.muted);
+  //     doc.text("+91 94292 67077", 40, 165);
+  //     doc.text(
+  //       "FP-9, Opp. Diamond 27, Nr. Kadi Nagrik Bank, TP 69, New Chandkheda, Ahmedabad-382424",
+  //       40,
+  //       180,
+  //       { maxWidth: 200 }
+  //     );
+
+  //     doc.setFontSize(18);
+  //     doc.setFont("helvetica", "bold");
+  //     doc.setTextColor(colors.primary);
+  //     doc.text("PAYMENT RECEIPT", 572, 40, { align: "right" });
+
+  //     doc.setLineWidth(1);
+  //     doc.setDrawColor(colors.border);
+  //     doc.line(40, 220, 572, 220);
+
+  //     const receiptDate = new Date().toLocaleDateString("en-US", {
+  //       year: "numeric",
+  //       month: "long",
+  //       day: "numeric",
+  //     });
+  //     doc.setFontSize(10);
+  //     doc.setFont("helvetica", "normal");
+  //     doc.setTextColor(colors.muted);
+  //     doc.text(`Date: ${receiptDate}`, 40, 240);
+
+  //     doc.setFontSize(14);
+  //     doc.setTextColor(colors.primary);
+  //     doc.text("Student Details:", 40, 280);
+  //     doc.setFontSize(11);
+  //     doc.setTextColor(colors.text);
+  //     doc.text(`Name: ${trainee.name}`, 40, 305);
+  //     doc.text(`Mobile: ${trainee.phone}`, 40, 325);
+
+  //     const tableTop = 350;
+
+  //     doc.setFillColor(colors.primary);
+  //     doc.rect(40, tableTop, 532, 30, "F");
+  //     doc.setFontSize(10);
+  //     doc.setTextColor(255, 255, 255);
+  //     doc.text("No.", 50, tableTop + 10);
+  //     doc.text("Sport Name", 80, tableTop + 10);
+  //     doc.text("Slot & Timing", 200, tableTop + 10);
+  //     doc.text("Selected Plan", 330, tableTop + 10);
+  //     doc.text("Amount", 492, tableTop + 10, { align: "right" });
+
+  //     const rowY = tableTop + 32;
+  //     doc.setFillColor(colors.secondary);
+  //     doc.rect(40, rowY, 532, 30, "F");
+
+  //     const sportName = getSportName(trainee.sport_id) || "N/A";
+  //     doc.setFontSize(10);
+  //     doc.setTextColor(colors.text);
+  //     doc.text("1", 50, rowY + 10);
+  //     doc.text(sportName, 80, rowY + 10, { maxWidth: 110 });
+
+  //     const batch = batches.find((b) => b._id === trainee.batch_id);
+  //     const slotTiming = batch ? batch.name : "N/A";
+  //     const slotTimeDetails = batch
+  //       ? `(${formatTime(batch.start_time)} - ${formatTime(batch.end_time)})`
+  //       : "";
+  //     doc.setFontSize(10);
+  //     doc.text(slotTiming, 200, rowY + 10, { maxWidth: 120 });
+  //     doc.setFontSize(8);
+  //     doc.text(slotTimeDetails, 200, rowY + 22, { maxWidth: 120 });
+
+  //     const plan = plans.find((p) => p._id === trainee.plan_id);
+  //     const planTiming = plan ? plan.name : "N/A";
+  //     const planDateDetails =
+  //       trainee.from && trainee.to
+  //         ? `(${formatDate(trainee.from)} - ${formatDate(trainee.to)})`
+  //         : "";
+  //     doc.setFontSize(10);
+  //     doc.text(planTiming, 330, rowY + 10, { maxWidth: 150 });
+  //     doc.setFontSize(8);
+  //     doc.text(planDateDetails, 330, rowY + 22, { maxWidth: 150 });
+
+  //     doc.setFontSize(10);
+  //     doc.text(
+  //       trainee.amount ? `Rs. ${trainee.amount}` : "N/A",
+  //       492,
+  //       rowY + 10,
+  //       { align: "right" }
+  //     );
+
+  //     const totalY = rowY + 50;
+  //     doc.setFontSize(12);
+  //     doc.setTextColor(colors.primary);
+  //     doc.text("Paid Amount:", 370, totalY);
+  //     doc.setFontSize(14);
+  //     doc.setTextColor(colors.text);
+  //     const totalAmount = trainee.amount - trainee.pending_amount;
+  //     doc.text(
+  //       totalAmount >= 0 ? `Rs. ${totalAmount}` : "N/A",
+  //       510,
+  //       totalY,
+  //       { align: "right" }
+  //     );
+
+  //     const paymentY = totalY + 50;
+  //     doc.setLineWidth(0.5);
+  //     doc.setDrawColor(colors.border);
+  //     doc.line(40, paymentY, 572, paymentY);
+  //     doc.setFontSize(12);
+  //     doc.setTextColor(colors.primary);
+  //     doc.text("Payment Details:", 40, paymentY + 15);
+  //     doc.setFontSize(10);
+  //     doc.setTextColor(colors.text);
+  //     doc.text(
+  //       `Method: ${trainee.method === "UPI" ? "ONLINE" : trainee.method || "N/A"}`,
+  //       40,
+  //       paymentY + 35
+  //     );
+
+  //     const statusColor = {
+  //       PAID: colors.success,
+  //       PARTIAL: colors.warning,
+  //       UNPAID: colors.danger,
+  //     }[trainee.payment_status] || colors.muted;
+
+  //     doc.setTextColor(statusColor);
+  //     doc.text(
+  //       `Status: ${trainee.payment_status || "N/A"}`,
+  //       40,
+  //       paymentY + 55
+  //     );
+
+  //     if (trainee.payment_status === "PARTIAL" && trainee.pending_amount > 0) {
+  //       doc.setTextColor(colors.text);
+  //       doc.text(
+  //         `Pending Amount: Rs. ${trainee.pending_amount}`,
+  //         40,
+  //         paymentY + 75
+  //       );
+  //     }
+
+  //     doc.setFontSize(8);
+  //     doc.setTextColor(colors.muted);
+  //     doc.text(
+  //       "This is a computer-generated receipt. No signature required.",
+  //       297.5,
+  //       750,
+  //       { align: "center" }
+  //     );
+
+  //     doc.save(`Receipt_${trainee.name}.pdf`);
+  //   } catch (error) {
+  //     console.error("Error generating receipt:", error);
+  //     setError("Failed to generate receipt. Please try again.");
+  //   }
+  // };
+
+
   const handleDownloadReceipt = async (data) => {
     try {
+      const transactions = await axios.post(
+        `${ip}/api/manager/fetch-trainee-transactions`,
+        {
+          trans_id: data.trans_identification
+        }
+      );
+      const trans_data = transactions.data.message;
+  
       const doc = new jsPDF({
         orientation: "portrait",
         unit: "pt",
         format: "a4",
       });
-
+  
       const colors = {
         primary: "#007e13",
         secondary: "#dbfee5",
@@ -2118,7 +2354,7 @@ const TraineeManagement = () => {
         danger: "#DC2626",
         border: "#E5E7EB",
       };
-
+  
       const trainee = {
         name: data.name || "N/A",
         phone: data.phone || data.roll_no || "N/A",
@@ -2128,14 +2364,14 @@ const TraineeManagement = () => {
         amount: data.amount || 0,
         pending_amount: data.pending_amount || 0,
         payment_status: data.payment_status || "N/A",
-        method: data.method || "N/A",
+        method: data.method === "UPI" ? "ONLINE" : data.method || "N/A",
         from: data.from || "",
         to: data.to || "",
       };
-
+  
       doc.setFillColor("#FFFFFF");
-      doc.rect(0, 0, 595.28, 120, "F");
-
+      doc.rect(0, 0, 595.28, 100, "F");
+  
       const logoUrl = "/logo.jpg";
       try {
         const logoImg = await new Promise((resolve, reject) => {
@@ -2145,172 +2381,203 @@ const TraineeManagement = () => {
           img.onload = () => resolve(img);
           img.onerror = () => reject(new Error("Failed to load logo"));
         });
-        doc.addImage(logoImg, "JPEG", 40, 20, 120, 0);
+        doc.addImage(logoImg, "JPEG", 40, 15, 100, 0);
       } catch (err) {
         console.warn("Failed to load logo:", err);
         doc.setFontSize(10);
         doc.setTextColor(colors.muted);
-        doc.text("Logo not available", 40, 30);
+        doc.text("Logo not available", 40, 25);
       }
-
-      doc.setFontSize(14);
+  
+      doc.setFontSize(12);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(colors.text);
-      doc.text("KAVYA SPORTS ACADEMY", 40, 150);
-      doc.setFontSize(10);
+      doc.text("KAVYA SPORTS ACADEMY", 40, 120);
+      doc.setFontSize(9);
       doc.setTextColor(colors.muted);
-      doc.text("+91 94292 67077", 40, 165);
+      doc.text("+91 94292 67077", 40, 135);
       doc.text(
         "FP-9, Opp. Diamond 27, Nr. Kadi Nagrik Bank, TP 69, New Chandkheda, Ahmedabad-382424",
         40,
-        180,
-        { maxWidth: 200 }
+        150,
+        { maxWidth: 180 }
       );
-
-      doc.setFontSize(18);
+  
+      doc.setFontSize(16);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(colors.primary);
-      doc.text("PAYMENT RECEIPT", 572, 40, { align: "right" });
-
+      doc.text("PAYMENT RECEIPT", 572, 30, { align: "right" });
+  
       doc.setLineWidth(1);
       doc.setDrawColor(colors.border);
-      doc.line(40, 220, 572, 220);
-
+      doc.line(40, 180, 572, 180);
+  
       const receiptDate = new Date().toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",
         day: "numeric",
       });
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(colors.muted);
-      doc.text(`Date: ${receiptDate}`, 40, 240);
-
-      doc.setFontSize(14);
+      doc.text(`Date: ${receiptDate}`, 40, 200);
+  
+      doc.setFontSize(12);
       doc.setTextColor(colors.primary);
-      doc.text("Student Details:", 40, 280);
-      doc.setFontSize(11);
+      doc.text("Student Details:", 40, 230);
+      doc.setFontSize(10);
       doc.setTextColor(colors.text);
-      doc.text(`Name: ${trainee.name}`, 40, 305);
-      doc.text(`Mobile: ${trainee.phone}`, 40, 325);
-
-      const tableTop = 350;
-
+      doc.text(`Name: ${trainee.name}`, 40, 250);
+      doc.text(`Mobile: ${trainee.phone}`, 40, 270);
+  
+      // Sport Details Table
+      const sportTableTop = 290;
+  
       doc.setFillColor(colors.primary);
-      doc.rect(40, tableTop, 532, 30, "F");
-      doc.setFontSize(10);
+      doc.rect(40, sportTableTop, 532, 25, "F");
+      doc.setFontSize(9);
       doc.setTextColor(255, 255, 255);
-      doc.text("No.", 50, tableTop + 10);
-      doc.text("Sport Name", 80, tableTop + 10);
-      doc.text("Slot & Timing", 200, tableTop + 10);
-      doc.text("Selected Plan", 330, tableTop + 10);
-      doc.text("Amount", 492, tableTop + 10, { align: "right" });
-
-      const rowY = tableTop + 32;
+      doc.text("No.", 50, sportTableTop + 8);
+      doc.text("Sport Name", 80, sportTableTop + 8);
+      doc.text("Slot & Timing", 200, sportTableTop + 8);
+      doc.text("Selected Plan", 330, sportTableTop + 8);
+      doc.text("Amount", 492, sportTableTop + 8, { align: "right" });
+  
+      const sportRowY = sportTableTop + 25;
       doc.setFillColor(colors.secondary);
-      doc.rect(40, rowY, 532, 30, "F");
-
+      doc.rect(40, sportRowY, 532, 30, "F");
+  
       const sportName = getSportName(trainee.sport_id) || "N/A";
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.setTextColor(colors.text);
-      doc.text("1", 50, rowY + 10);
-      doc.text(sportName, 80, rowY + 10, { maxWidth: 110 });
-
+      doc.text("1", 50, sportRowY + 10);
+      doc.text(sportName, 80, sportRowY + 10, { maxWidth: 110 });
+  
       const batch = batches.find((b) => b._id === trainee.batch_id);
       const slotTiming = batch ? batch.name : "N/A";
       const slotTimeDetails = batch
         ? `(${formatTime(batch.start_time)} - ${formatTime(batch.end_time)})`
         : "";
-      doc.setFontSize(10);
-      doc.text(slotTiming, 200, rowY + 10, { maxWidth: 120 });
-      doc.setFontSize(8);
-      doc.text(slotTimeDetails, 200, rowY + 22, { maxWidth: 120 });
-
+      doc.setFontSize(9);
+      doc.text(slotTiming, 200, sportRowY + 10, { maxWidth: 120 });
+      doc.setFontSize(7);
+      doc.text(slotTimeDetails, 200, sportRowY + 20, { maxWidth: 120 });
+  
       const plan = plans.find((p) => p._id === trainee.plan_id);
       const planTiming = plan ? plan.name : "N/A";
       const planDateDetails =
         trainee.from && trainee.to
           ? `(${formatDate(trainee.from)} - ${formatDate(trainee.to)})`
           : "";
-      doc.setFontSize(10);
-      doc.text(planTiming, 330, rowY + 10, { maxWidth: 150 });
-      doc.setFontSize(8);
-      doc.text(planDateDetails, 330, rowY + 22, { maxWidth: 150 });
-
-      doc.setFontSize(10);
+      doc.setFontSize(9);
+      doc.text(planTiming, 330, sportRowY + 10, { maxWidth: 150 });
+      doc.setFontSize(7);
+      doc.text(planDateDetails, 330, sportRowY + 20, { maxWidth: 150 });
+  
+      doc.setFontSize(9);
       doc.text(
         trainee.amount ? `Rs. ${trainee.amount}` : "N/A",
         492,
-        rowY + 10,
+        sportRowY + 10,
         { align: "right" }
       );
-
-      const totalY = rowY + 50;
-      doc.setFontSize(12);
+  
+      // Transaction Table
+      const transTableTop = sportRowY + 40;
+  
+      doc.setFillColor(colors.primary);
+      doc.rect(40, transTableTop, 532, 25, "F");
+      doc.setFontSize(9);
+      doc.setTextColor(255, 255, 255);
+      doc.text("No.", 50, transTableTop + 8);
+      doc.text("Method", 200, transTableTop + 8);
+      doc.text("Amount", 492, transTableTop + 8, { align: "right" });
+  
+      // Transaction Table Rows (up to 20 transactions, dynamically adjusted)
+      let transRowY = transTableTop + 25;
+      const maxTransactions = 20;
+      const displayedTransactions = Math.min(trans_data.length, maxTransactions);
+      trans_data.slice(0, maxTransactions).forEach((transaction, index) => {
+        doc.setFillColor(index % 2 === 0 ? colors.secondary : "#FFFFFF");
+        doc.rect(40, transRowY, 532, 25, "F");
+  
+        doc.setFontSize(9);
+        doc.setTextColor(colors.text);
+        doc.text(`${index + 1}`, 50, transRowY + 8);
+        doc.text(transaction.method === "UPI" ? "ONLINE" : transaction.method, 200, transRowY + 8);
+        doc.text(`Rs. ${transaction.amount}`, 492, transRowY + 8, { align: "right" });
+  
+        transRowY += 25;
+      });
+  
+      // Total Amount
+      const totalY = transRowY + 15;
+      const totalAmount = trans_data.reduce((sum, t) => sum + t.amount, 0);
+      doc.setFontSize(11);
       doc.setTextColor(colors.primary);
-      doc.text("Paid Amount:", 370, totalY);
-      doc.setFontSize(14);
+      doc.text("Total Paid Amount:", 370, totalY);
+      doc.setFontSize(12);
       doc.setTextColor(colors.text);
-      const totalAmount = trainee.amount - trainee.pending_amount;
-      doc.text(
-        totalAmount >= 0 ? `Rs. ${totalAmount}` : "N/A",
-        510,
-        totalY,
-        { align: "right" }
-      );
-
-      const paymentY = totalY + 50;
+      doc.text(`Rs. ${totalAmount}`, 510, totalY, { align: "right" });
+  
+      // Payment Details
+      const paymentY = totalY + 40;
       doc.setLineWidth(0.5);
       doc.setDrawColor(colors.border);
       doc.line(40, paymentY, 572, paymentY);
-      doc.setFontSize(12);
+      doc.setFontSize(11);
       doc.setTextColor(colors.primary);
-      doc.text("Payment Details:", 40, paymentY + 15);
-      doc.setFontSize(10);
+      doc.text("Payment Details:", 40, paymentY + 12);
+      doc.setFontSize(9);
       doc.setTextColor(colors.text);
       doc.text(
-        `Method: ${trainee.method === "UPI" ? "ONLINE" : trainee.method || "N/A"}`,
+        `Method: ${trainee.method}`,
         40,
-        paymentY + 35
+        paymentY + 28
       );
-
+  
       const statusColor = {
         PAID: colors.success,
         PARTIAL: colors.warning,
         UNPAID: colors.danger,
       }[trainee.payment_status] || colors.muted;
-
+  
       doc.setTextColor(statusColor);
       doc.text(
         `Status: ${trainee.payment_status || "N/A"}`,
         40,
-        paymentY + 55
+        paymentY + 44
       );
-
+  
       if (trainee.payment_status === "PARTIAL" && trainee.pending_amount > 0) {
         doc.setTextColor(colors.text);
         doc.text(
           `Pending Amount: Rs. ${trainee.pending_amount}`,
           40,
-          paymentY + 75
+          paymentY + 60
         );
       }
-
-      doc.setFontSize(8);
+  
+      // Adjust footer position based on number of transactions
+      const footerY = paymentY + (trainee.payment_status === "PARTIAL" && trainee.pending_amount > 0 ? 80 : 60);
+      doc.setFontSize(7);
       doc.setTextColor(colors.muted);
       doc.text(
         "This is a computer-generated receipt. No signature required.",
         297.5,
-        750,
+        Math.min(780, footerY),
         { align: "center" }
       );
-
+  
       doc.save(`Receipt_${trainee.name}.pdf`);
     } catch (error) {
       console.error("Error generating receipt:", error);
       setError("Failed to generate receipt. Please try again.");
     }
   };
+
+
+
 
   const fetchTrainees = async () => {
     try {
@@ -3215,13 +3482,15 @@ const TraineeManagement = () => {
                   <DollarSign className="w-5 h-5" />
                 </button>
               )}
-              <button
-                onClick={() => handleDeleteTrainee(trainee._id)}
-                className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                title="Delete"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
+              {isAdmin && (
+                  <button
+                    onClick={() => handleDeleteTrainee(trainee._id)}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                )}
             </div>
           </div>
         ))}
@@ -3629,12 +3898,14 @@ const TraineeManagement = () => {
                           Total Amount
                         </label>
                         <input
-                          type="number"
-                          name="amount"
-                          value={traineeFormData.amount}
-                          onChange={handleTraineeInputChange}
-                          className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                        />
+  type="number"
+  name="amount"
+  value={traineeFormData.amount}
+  onChange={handleTraineeInputChange}
+  onWheel={(e) => e.target.blur()} // Prevent scroll change
+  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+/>
+
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
